@@ -6,7 +6,7 @@
 
 import { initTheme } from './layout/theme.js';
 import { initSidebar } from './layout/sidebar.js';
-import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues, stateAbastecimento, initAbastecimentoStore, setAbastecimentoFilter, applyAbastecimentoFilters } from './store/dataStore.js';
+import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues, stateAbastecimento, initAbastecimentoStore, setAbastecimentoFilter, applyAbastecimentoFilters, getUniqueAbastecimentoValues } from './store/dataStore.js';
 
 import { initRouter } from './router.js';
 
@@ -1815,8 +1815,16 @@ function setupAbastecimentoFilters() {
     const inputDateEnd = document.getElementById('abast-filter-dateEnd');
 
     if (inputPrefixo) {
+        // Popula as opções únicas
+        const prefixos = getUniqueAbastecimentoValues('prefixo');
+        let htmlOpts = '<option value="">TODAS AS VIATURAS</option>';
+        prefixos.forEach(p => {
+            htmlOpts += `<option value="${p}">${p}</option>`;
+        });
+        inputPrefixo.innerHTML = htmlOpts;
+        
         inputPrefixo.value = stateAbastecimento.filters.prefixo;
-        inputPrefixo.oninput = (e) => {
+        inputPrefixo.onchange = (e) => {
             setAbastecimentoFilter('prefixo', e.target.value);
             applyAbastecimentoFilters();
         };

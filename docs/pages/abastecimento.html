@@ -11,8 +11,11 @@
             <div class="flex flex-col gap-1 w-40">
                 <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Prefixo Viatura</label>
                 <div class="relative">
-                    <i class="fa-solid fa-truck-fire absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                    <input type="text" id="abast-filter-prefixo" placeholder="M-..." class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-xs text-[#e5e7eb] focus:outline-none focus:border-emerald-500/50 transition">
+                    <i class="fa-solid fa-truck-fire absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs z-10 pointer-events-none"></i>
+                    <select id="abast-filter-prefixo" class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl py-2 pl-9 pr-8 text-xs text-[#e5e7eb] focus:outline-none focus:border-emerald-500/50 transition appearance-none cursor-pointer">
+                        <option value="">TODAS AS VIATURAS</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none"></i>
                 </div>
             </div>
 
