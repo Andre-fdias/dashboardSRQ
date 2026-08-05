@@ -5,7 +5,7 @@
 
 const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz-JkZhBDtC5rYVXhdKnaebtsBbOlY2Aj9jCjU-QdIHMjnPexh767DSWKru7LePHNJ_xdDw5R5octf/pub?output=xlsx';
 const DEJEM_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQU7P_JQZtrnFFHFkI8HDIAMnM9cK2TZBL_TBUn2GdTvTV2a3aEs9qCm--6DOfRSQ/pub?output=xlsx';
-const ABASTECIMENTO_URL = 'https://docs.google.com/spreadsheets/d/1Yddf9EORz6izjuYQhYBPN23edWIaJgxcb1qIXwu35A4/pub?output=xlsx';
+const ABASTECIMENTO_URL = BASE_URL; // Usa a mesma planilha do Ocorrências agora!
 
 export async function fetchSpreadsheetData() {
     const proxies = [
@@ -296,16 +296,17 @@ export async function fetchAbastecimentoData() {
             
             const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
             
-            // Tenta pegar a primeira aba
-            if (workbook.SheetNames.length > 0) {
-                const sheetName = workbook.SheetNames[0];
+            // Busca a aba específica de Abastecimento ETL
+            const sheetName = workbook.SheetNames.find(s => s.toUpperCase().includes('ABASTECIMENTO')) || workbook.SheetNames[0];
+            
+            if (sheetName) {
                 const worksheet = workbook.Sheets[sheetName];
                 const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
                 
                 // Dados começam na linha 2 (índice 1). Cabeçalhos na linha 1 (índice 0).
                 if (rawData.length > 1) {
                     allData = processAbastecimentoSheetData(rawData.slice(1));
-                    console.log(`ABASTECIMENTO parseou ${allData.length} linhas válidas de EB SÃO ROQUE.`);
+                    console.log(`ABASTECIMENTO parseou ${allData.length} linhas válidas de EB SÃO ROQUE da aba ${sheetName}.`);
                 } else {
                     console.warn(`Planilha ABASTECIMENTO ignorada: Sem dados suficientes.`);
                     allData = [];
