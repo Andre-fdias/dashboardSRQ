@@ -5,6 +5,7 @@
 
 const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz-JkZhBDtC5rYVXhdKnaebtsBbOlY2Aj9jCjU-QdIHMjnPexh767DSWKru7LePHNJ_xdDw5R5octf/pub?output=xlsx';
 const DEJEM_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQU7P_JQZtrnFFHFkI8HDIAMnM9cK2TZBL_TBUn2GdTvTV2a3aEs9qCm--6DOfRSQ/pub?output=xlsx';
+const ABASTECIMENTO_URL = 'https://docs.google.com/spreadsheets/d/1Yddf9EORz6izjuYQhYBPN23edWIaJgxcb1qIXwu35A4/pub?output=xlsx';
 
 export async function fetchSpreadsheetData() {
     const proxies = [
@@ -264,6 +265,120 @@ function processDejemSheetData(rows) {
             horaInicio: formatHora(row[5]),
             horaFim: formatHora(row[6]),
             eb: row[7] ? String(row[7]).trim().toUpperCase() : ''
+        };
+    }).filter(row => row !== null);
+}
+
+// ==========================================
+// ABASTECIMENTO - Nova Lógica de Integração
+// ==========================================
+
+export async function fetchAbastecimentoData() {
+    const proxies = [
+        ABASTECIMENTO_URL,
+        'https://corsproxy.io/?' + encodeURIComponent(ABASTECIMENTO_URL),
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(ABASTECIMENTO_URL)
+    ];
+
+    let allData = null;
+    let lastError = null;
+
+    for (const url of proxies) {
+        try {
+            console.log("Tentando baixar ABASTECIMENTO de:", url);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const arrayBuffer = await response.arrayBuffer();
+            if (!arrayBuffer || arrayBuffer.byteLength < 100) {
+                throw new Error("Arquivo muito pequeno");
+            }
+            
+            const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+            
+            // Tenta pegar a primeira aba
+            if (workbook.SheetNames.length > 0) {
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+                
+                // Dados começam na linha 2 (índice 1). Cabeçalhos na linha 1 (índice 0).
+                if (rawData.length > 1) {
+                    allData = processAbastecimentoSheetData(rawData.slice(1));
+                    console.log(`ABASTECIMENTO parseou ${allData.length} linhas válidas de EB SÃO ROQUE.`);
+                } else {
+                    console.warn(`Planilha ABASTECIMENTO ignorada: Sem dados suficientes.`);
+                    allData = [];
+                }
+            } else {
+                throw new Error("Nenhuma aba encontrada na planilha de Abastecimento.");
+            }
+            
+            break;
+            
+        } catch (error) {
+            console.warn("Falha no proxy ABASTECIMENTO:", url, error.message);
+            lastError = error;
+        }
+    }
+
+    if (allData === null) {
+        throw new Error("Todas as tentativas de baixar a planilha ABASTECIMENTO falharam: " + (lastError ? lastError.message : ""));
+    }
+
+    return allData;
+}
+
+function processAbastecimentoSheetData(rows) {
+    return rows.map((row) => {
+        // Ignorar linhas em branco ou que não sejam EB SÃO ROQUE (Coluna J = index 9)
+        if (!row || !row[0]) return null;
+        
+        const pelotao = row[9] ? String(row[9]).trim().toUpperCase() : '';
+        if (pelotao !== 'EB SÃO ROQUE') return null;
+
+        // Tratar a data (coluna D = index 3)
+        let rawDate = row[3];
+        let dateObj = null;
+        if (rawDate instanceof Date) {
+            dateObj = rawDate;
+        } else if (typeof rawDate === 'string') {
+            const parts = rawDate.split('/');
+            if (parts.length === 3) dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+            else dateObj = new Date(rawDate);
+        } else if (typeof rawDate === 'number') {
+            dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+        }
+
+        // A(0)=Prefixo, B(1)=Responsável, C(2)=Placa, D(3)=Data, E(4)=Km, F(5)=Volume_L, G(6)=Valor, H(7)=Combustível, I(8)=Aditivo, J(9)=Pelotão, K(10)=POSTO
+        
+        // Parse de números
+        const parseValor = (val) => {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            const clean = String(val).replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+            const n = parseFloat(clean);
+            return isNaN(n) ? 0 : n;
+        };
+
+        const parseVol = (val) => {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            const clean = String(val).replace(',', '.').trim();
+            const n = parseFloat(clean);
+            return isNaN(n) ? 0 : n;
+        };
+
+        return {
+            prefixo: String(row[0]).trim(),
+            responsavel: row[1] ? String(row[1]).trim().toUpperCase() : '',
+            placa: row[2] ? String(row[2]).trim().toUpperCase() : '',
+            data: dateObj && !isNaN(dateObj.getTime()) ? dateObj : null,
+            km: row[4] ? String(row[4]).trim() : '',
+            volume: parseVol(row[5]),
+            valor: parseValor(row[6]),
+            combustivel: row[7] ? String(row[7]).trim().toUpperCase() : '',
+            posto: row[10] ? String(row[10]).trim().toUpperCase() : ''
         };
     }).filter(row => row !== null);
 }

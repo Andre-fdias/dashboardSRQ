@@ -1,4 +1,4 @@
-import { fetchSpreadsheetData, fetchDejemData } from '../api/sheets.js';
+import { fetchSpreadsheetData, fetchDejemData, fetchAbastecimentoData } from '../api/sheets.js';
 
 const CACHE_KEY = 'dashboard_data_cache_v3';
 const CACHE_TIME_KEY = 'dashboard_data_time_v2';
@@ -261,4 +261,93 @@ export function applyDejemFilters() {
     });
 
     window.dispatchEvent(new CustomEvent('dejemDataUpdated', { detail: stateDejem.filteredData }));
+}
+
+// ==========================================
+// STORE ABASTECIMENTO
+// ==========================================
+export const stateAbastecimento = {
+    rawData: [],
+    filteredData: [],
+    filters: {
+        prefixo: '',
+        dateStart: getPastDateStr(30), // Por padrão 30 dias
+        dateEnd: ''
+    },
+    isLoaded: false
+};
+
+export async function initAbastecimentoStore() {
+    showLoader();
+    try {
+        const CACHE_ABAST_KEY = 'dashboard_abast_cache_v1';
+        const CACHE_ABAST_TIME = 'dashboard_abast_time_v1';
+        const now = new Date().getTime();
+        
+        const cachedData = localStorage.getItem(CACHE_ABAST_KEY);
+        const cacheTime = localStorage.getItem(CACHE_ABAST_TIME);
+        
+        let hasValidCache = false;
+        if (cachedData && cacheTime && (now - parseInt(cacheTime)) < CACHE_EXPIRATION_MS) {
+            try {
+                const parsed = JSON.parse(cachedData);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    stateAbastecimento.rawData = parsed.map(item => {
+                        if (item.data) item.data = new Date(item.data);
+                        return item;
+                    });
+                    hasValidCache = true;
+                }
+            } catch (e) {}
+        }
+
+        if (!hasValidCache) {
+            console.log("Buscando dados da Planilha ABASTECIMENTO");
+            stateAbastecimento.rawData = await fetchAbastecimentoData();
+            try {
+                localStorage.setItem(CACHE_ABAST_KEY, JSON.stringify(stateAbastecimento.rawData));
+                localStorage.setItem(CACHE_ABAST_TIME, now.toString());
+            } catch (e) {}
+        }
+        
+        stateAbastecimento.isLoaded = true;
+        applyAbastecimentoFilters();
+        
+    } catch (error) {
+        console.error("Erro ao inicializar AbastecimentoStore:", error);
+    } finally {
+        hideLoader();
+    }
+}
+
+export function setAbastecimentoFilter(key, value) {
+    if (stateAbastecimento.filters.hasOwnProperty(key)) {
+        stateAbastecimento.filters[key] = value;
+    }
+}
+
+export function getUniqueAbastecimentoValues(field) {
+    const values = stateAbastecimento.rawData.map(item => item[field]).filter(val => val && val.toString().trim() !== '');
+    return [...new Set(values)].sort();
+}
+
+export function applyAbastecimentoFilters() {
+    stateAbastecimento.filteredData = stateAbastecimento.rawData.filter(item => {
+        let match = true;
+        
+        if (stateAbastecimento.filters.prefixo && !item.prefixo.includes(stateAbastecimento.filters.prefixo.toUpperCase())) match = false;
+        
+        if (stateAbastecimento.filters.dateStart) {
+            const start = new Date(stateAbastecimento.filters.dateStart + 'T00:00:00');
+            if (item.data && item.data < start) match = false;
+        }
+        if (stateAbastecimento.filters.dateEnd) {
+            const end = new Date(stateAbastecimento.filters.dateEnd + 'T23:59:59');
+            if (item.data && item.data > end) match = false;
+        }
+        
+        return match;
+    });
+
+    window.dispatchEvent(new CustomEvent('abastecimentoDataUpdated', { detail: stateAbastecimento.filteredData }));
 }

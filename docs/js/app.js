@@ -6,7 +6,7 @@
 
 import { initTheme } from './layout/theme.js';
 import { initSidebar } from './layout/sidebar.js';
-import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues } from './store/dataStore.js';
+import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues, stateAbastecimento, initAbastecimentoStore, setAbastecimentoFilter, applyAbastecimentoFilters } from './store/dataStore.js';
 
 import { initRouter } from './router.js';
 
@@ -56,6 +56,8 @@ document.addEventListener('page-loaded', (e) => {
         setTimeout(() => { initTimelineTab(); }, 100);
     } else if (route === 'dejem') {
         setTimeout(() => { initDejemTab(); }, 100);
+    } else if (route === 'abastecimento') {
+        setTimeout(() => { initAbastecimentoTab(); }, 100);
     }
 });
 
@@ -1789,4 +1791,103 @@ function renderDejemTable() {
     });
 
     tbody.innerHTML = html;
+}
+
+// ============================================
+// LÓGICA DA ABA ABASTECIMENTO
+// ============================================
+
+function initAbastecimentoTab() {
+    if (!stateAbastecimento.isLoaded) {
+        initAbastecimentoStore().then(() => {
+            setupAbastecimentoFilters();
+            renderAbastecimentoDashboard();
+        });
+    } else {
+        setupAbastecimentoFilters();
+        renderAbastecimentoDashboard();
+    }
+}
+
+function setupAbastecimentoFilters() {
+    const inputPrefixo = document.getElementById('abast-filter-prefixo');
+    const inputDateStart = document.getElementById('abast-filter-dateStart');
+    const inputDateEnd = document.getElementById('abast-filter-dateEnd');
+
+    if (inputPrefixo) {
+        inputPrefixo.value = stateAbastecimento.filters.prefixo;
+        inputPrefixo.oninput = (e) => {
+            setAbastecimentoFilter('prefixo', e.target.value);
+            applyAbastecimentoFilters();
+        };
+    }
+    
+    if (inputDateStart) {
+        inputDateStart.value = stateAbastecimento.filters.dateStart;
+        inputDateStart.onchange = (e) => {
+            setAbastecimentoFilter('dateStart', e.target.value);
+            applyAbastecimentoFilters();
+        };
+    }
+    
+    if (inputDateEnd) {
+        inputDateEnd.value = stateAbastecimento.filters.dateEnd;
+        inputDateEnd.onchange = (e) => {
+            setAbastecimentoFilter('dateEnd', e.target.value);
+            applyAbastecimentoFilters();
+        };
+    }
+}
+
+window.addEventListener('abastecimentoDataUpdated', (e) => {
+    if (window.location.hash.includes('abastecimento')) {
+        renderAbastecimentoDashboard();
+    }
+});
+
+function renderAbastecimentoDashboard() {
+    const tbody = document.getElementById('abast-table-body');
+    const cardValor = document.getElementById('abast-card-valor');
+    const cardVolume = document.getElementById('abast-card-volume');
+    const cardCount = document.getElementById('abast-card-count');
+    
+    if (!tbody || !stateAbastecimento.filteredData) return;
+
+    let totalValor = 0;
+    let totalVolume = 0;
+    const count = stateAbastecimento.filteredData.length;
+
+    let html = '';
+    
+    if (count === 0) {
+        html = `<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">Nenhum registro encontrado.</td></tr>`;
+    } else {
+        stateAbastecimento.filteredData.forEach(item => {
+            totalValor += item.valor;
+            totalVolume += item.volume;
+            
+            const dataStr = item.data ? item.data.toLocaleDateString('pt-BR') : 'N/I';
+            const valFormated = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor);
+            const volFormated = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.volume) + ' L';
+            
+            html += `
+                <tr class="hover:bg-white/5 transition">
+                    <td class="px-4 py-3 border-b border-white/5 text-xs text-[#5a6f8a]">${dataStr}</td>
+                    <td class="px-4 py-3 border-b border-white/5 font-mono font-bold text-emerald-400">${item.prefixo}</td>
+                    <td class="px-4 py-3 border-b border-white/5 font-mono text-xs text-gray-400">${item.placa}</td>
+                    <td class="px-4 py-3 border-b border-white/5 font-bold text-xs">${item.responsavel}</td>
+                    <td class="px-4 py-3 border-b border-white/5 text-xs text-gray-300">${item.km}</td>
+                    <td class="px-4 py-3 border-b border-white/5 text-xs text-blue-400 font-bold text-right">${volFormated}</td>
+                    <td class="px-4 py-3 border-b border-white/5 text-xs text-red-400 font-bold text-right">${valFormated}</td>
+                    <td class="px-4 py-3 border-b border-white/5 text-[10px] text-gray-400 max-w-[200px] truncate" title="${item.posto}">${item.posto}</td>
+                </tr>
+            `;
+        });
+    }
+
+    tbody.innerHTML = html;
+    
+    if (cardCount) cardCount.textContent = count;
+    if (cardValor) cardValor.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValor);
+    if (cardVolume) cardVolume.textContent = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalVolume) + ' L';
 }
