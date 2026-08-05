@@ -1817,9 +1817,9 @@ function setupAbastecimentoFilters() {
     if (inputPrefixo) {
         // Popula as opções únicas
         const prefixos = getUniqueAbastecimentoValues('prefixo');
-        let htmlOpts = '<option value="">TODAS AS VIATURAS</option>';
+        let htmlOpts = '<option value="" class="bg-[#0a0e17] text-white">TODAS AS VIATURAS</option>';
         prefixos.forEach(p => {
-            htmlOpts += `<option value="${p}">${p}</option>`;
+            htmlOpts += `<option value="${p}" class="bg-[#0a0e17] text-white">${p}</option>`;
         });
         inputPrefixo.innerHTML = htmlOpts;
         
@@ -1886,10 +1886,21 @@ function renderAbastecimentoDashboard() {
             let kmInicial = registros[0].km;
             let kmFinal = registros[registros.length - 1].km;
             
-            // Soma o volume de TODOS, exceto do primeiro (índice 0)
+            // Set the first row's kml_linha to empty
+            registros[0].kml_linha = '--';
+            
+            // Soma o volume de TODOS, exceto do primeiro (índice 0) e calcula consumo por trecho
             let volumeUsado = 0;
             for (let i = 1; i < registros.length; i++) {
-                volumeUsado += registros[i].volume;
+                let volTrecho = registros[i].volume;
+                volumeUsado += volTrecho;
+                
+                let distTrecho = registros[i].km - registros[i-1].km;
+                if (distTrecho > 0 && volTrecho > 0) {
+                    registros[i].kml_linha = (distTrecho / volTrecho).toFixed(1).replace('.', ',');
+                } else {
+                    registros[i].kml_linha = '--';
+                }
             }
 
             if (kmFinal > kmInicial && volumeUsado > 0) {
@@ -1917,6 +1928,8 @@ function renderAbastecimentoDashboard() {
             const valFormated = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor);
             const volFormated = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.volume) + ' L';
             
+            const kmlStr = item.kml_linha ? item.kml_linha : '--';
+
             html += `
                 <tr class="hover:bg-white/5 transition">
                     <td class="px-4 py-3 border-b border-white/5 text-xs text-[#5a6f8a]">${dataStr}</td>
@@ -1926,6 +1939,7 @@ function renderAbastecimentoDashboard() {
                     <td class="px-4 py-3 border-b border-white/5 text-xs text-gray-300">${item.km}</td>
                     <td class="px-4 py-3 border-b border-white/5 text-xs text-blue-400 font-bold text-right">${volFormated}</td>
                     <td class="px-4 py-3 border-b border-white/5 text-xs text-red-400 font-bold text-right">${valFormated}</td>
+                    <td class="px-4 py-3 border-b border-white/5 text-xs text-purple-400 font-bold text-right bg-purple-500/5">${kmlStr}</td>
                     <td class="px-4 py-3 border-b border-white/5 text-[10px] text-gray-400 max-w-[200px] truncate" title="${item.posto}">${item.posto}</td>
                 </tr>
             `;
