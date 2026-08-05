@@ -1,0 +1,161 @@
+/**
+ * sheets.js
+ * Responsável por buscar e fazer o parse da planilha Google (V2.0 com 19 colunas A-S)
+ */
+
+const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz-JkZhBDtC5rYVXhdKnaebtsBbOlY2Aj9jCjU-QdIHMjnPexh767DSWKru7LePHNJ_xdDw5R5octf/pub?output=xlsx';
+
+export async function fetchSpreadsheetData() {
+    const proxies = [
+        BASE_URL,
+        'https://corsproxy.io/?' + encodeURIComponent(BASE_URL),
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(BASE_URL)
+    ];
+
+    let allData = null;
+    let lastError = null;
+
+    for (const url of proxies) {
+        try {
+            console.log("Tentando baixar de:", url);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const arrayBuffer = await response.arrayBuffer();
+            if (!arrayBuffer || arrayBuffer.byteLength < 100) {
+                throw new Error("Arquivo muito pequeno");
+            }
+            
+            const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+            
+            allData = [];
+            console.log("Abas encontradas no arquivo Excel:", workbook.SheetNames);
+            workbook.SheetNames.forEach(sheetName => {
+                if (sheetName.toUpperCase() === 'LOG' || sheetName.toUpperCase().includes('RESUMO')) {
+                    console.log(`Ignorando planilha de sistema/resumo: ${sheetName}`);
+                    return;
+                }
+
+                const worksheet = workbook.Sheets[sheetName];
+                const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+                // Novo Padrão ETL: Cabeçalho na linha 1 (index 0). Dados a partir da linha 2 (index 1).
+                if (rawData.length > 1) {
+                    const sheetData = processSheetData(rawData.slice(1), sheetName);
+                    console.log(`Planilha ${sheetName} parseou ${sheetData.length} linhas de dados válidas.`);
+                    allData = allData.concat(sheetData);
+                } else {
+                    console.warn(`Planilha ${sheetName} ignorada: Menos de 2 linhas encontradas.`);
+                }
+            });
+            
+            console.log("Sucesso no download e parse via:", url);
+            break;
+            
+        } catch (error) {
+            console.warn("Falha no proxy ou arquivo corrompido:", url, error.message);
+            lastError = error;
+        }
+    }
+
+    if (allData === null) {
+        throw new Error("Todas as tentativas de baixar a planilha falharam: " + (lastError ? lastError.message : ""));
+    }
+
+    return allData;
+}
+
+/**
+ * Processamento das 19 colunas (A a S) + Colunas técnicas calculadas em memória.
+ */
+function processSheetData(rows, sheetName) {
+    const diasSemana = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+    const mesesNomes = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
+    return rows.map((row, index) => {
+        // Ignora linhas totalmente vazias ou sem data/talão
+        if (!row || row.length === 0 || !row[0] || !row[2]) return null;
+
+        // Tratar a data
+        let rawDate = row[0];
+        let dateObj = null;
+        if (rawDate instanceof Date) {
+            dateObj = rawDate;
+        } else if (typeof rawDate === 'string') {
+            // Tenta dar parse (formato esperado dd/mm/yyyy)
+            const parts = rawDate.split('/');
+            if (parts.length === 3) {
+                dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+            } else {
+                dateObj = new Date(rawDate);
+            }
+        } else if (typeof rawDate === 'number') {
+            dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+        }
+
+        if (!dateObj || isNaN(dateObj.getTime())) {
+            console.warn("Linha rejeitada por data inválida:", row);
+            return null;
+        }
+
+        // Cálculo de horas para Tempo Médio (G: TEMPO TOTAL em minutos)
+        let tempoTotal = row[6] ? String(row[6]).trim().toLowerCase() : '';
+        let tempoMinutos = 0;
+        if (tempoTotal) {
+            let hrs = 0;
+            let mins = 0;
+            const hMatch = tempoTotal.match(/(\d+)\s*h/);
+            if (hMatch) hrs = parseInt(hMatch[1], 10);
+            const mMatch = tempoTotal.match(/(\d+)\s*min/);
+            if (mMatch) mins = parseInt(mMatch[1], 10);
+            tempoMinutos = (hrs * 60) + mins;
+        }
+
+        // KM
+        const kmSaida = parseFloat(row[8]) || 0;
+        const kmChegada = parseFloat(row[9]) || 0;
+        const distancia = parseFloat(row[10]) || (kmChegada >= kmSaida ? (kmChegada - kmSaida) : 0);
+
+        // Colunas Calculadas
+        const ano = dateObj.getFullYear();
+        const mesIndex = dateObj.getMonth();
+        const nomeMes = mesesNomes[mesIndex];
+        const diaSemana = diasSemana[dateObj.getDay()];
+        const talao = String(row[2]).trim();
+        const idOcorrencia = `${ano}-${talao}`;
+
+        // Extrai hora de saída (ex: "18:25" -> "18")
+        const qtrSaida = row[4] ? String(row[4]).trim() : '';
+        const horaSaida = qtrSaida.includes(':') ? qtrSaida.split(':')[0] : '';
+
+        return {
+            id: idOcorrencia,
+            mes: sheetName,
+            data: dateObj,
+            prontidao: row[1] ? String(row[1]).toUpperCase().trim() : '',
+            talao: talao,
+            viatura: row[3] ? String(row[3]).toUpperCase().trim() : '',
+            qtrSaida: qtrSaida,
+            qtrChegada: row[5] ? String(row[5]).trim() : '',
+            tempoTotal: tempoTotal,
+            tempoMinutos: tempoMinutos,
+            resultado: row[7] ? String(row[7]).toUpperCase().trim() : 'ATENDIDA',
+            kmSaida: kmSaida,
+            kmChegada: kmChegada,
+            distancia: Math.round(distancia * 100) / 100,
+            cmtVtr: row[11] ? String(row[11]).trim() : '', // L = CMT VTR
+            natureza: row[12] ? String(row[12]).trim() : '', // M = NATUREZA
+            vitimas: parseInt(row[13]) || 0, // N = VÍTIMAS
+            vitimasFatais: parseInt(row[14]) || 0, // O = VÍTIMAS FATAIS
+            endereco: row[15] ? String(row[15]).trim() : '', // P = ENDEREÇO
+            cidade: row[16] ? String(row[16]).trim().toUpperCase() : '', // Q = CIDADE
+            telegrafista: row[17] ? String(row[17]).trim() : '', // R = TELEGRAFISTA
+            observacoes: row[18] ? String(row[18]).trim() : '', // S = OBSERVAÇÕES
+            
+            // Campos técnicas de apoio
+            ano: ano,
+            nomeMes: nomeMes,
+            diaSemana: diaSemana,
+            horaSaida: horaSaida
+        };
+    }).filter(item => item !== null);
+}

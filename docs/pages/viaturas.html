@@ -1,0 +1,87 @@
+<!-- Título e Botões de Exportação -->
+<div class="glass-panel p-4 rounded-3xl z-10 mb-4 flex justify-between items-center">
+    <h6 class="text-sm font-bold tracking-wider text-blue-400 uppercase flex items-center gap-2">
+        <i class="fa-solid fa-truck"></i> Análise de Frota Operacional
+    </h6>
+    <button class="btn-filter btn-filter-secondary" id="btn-export-viaturas">
+        <i class="fa-solid fa-file-export"></i> Exportar
+    </button>
+</div>
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 z-10">
+    <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl">
+            <i class="fa-solid fa-truck-fast"></i>
+        </div>
+        <div>
+            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Mais Acionada</p>
+            <h3 class="text-xl font-bold text-white mt-0.5" id="kpi-vtr-top-calls">--</h3>
+        </div>
+    </div>
+    
+    <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-600/5 border border-yellow-500/20 flex items-center justify-center text-yellow-400 text-xl">
+            <i class="fa-solid fa-route"></i>
+        </div>
+        <div>
+            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Maior Desgaste (KM)</p>
+            <h3 class="text-xl font-bold text-white mt-0.5" id="kpi-vtr-top-km">--</h3>
+        </div>
+    </div>
+    
+    <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/20 flex items-center justify-center text-purple-400 text-xl">
+            <i class="fa-regular fa-clock"></i>
+        </div>
+        <div>
+            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Tempo Médio de Empenho</p>
+            <h3 class="text-xl font-bold text-white mt-0.5" id="kpi-vtr-avg-time">--</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 z-10">
+    <div class="glass-panel p-4 rounded-3xl">
+        <h6 class="text-xs font-bold tracking-wider text-[#7a8ba8] uppercase mb-4 text-center">Volume de Acionamentos</h6>
+        <div id="chart-vtr-calls" class="chart-container" style="height: 300px;"></div>
+    </div>
+    
+    <div class="glass-panel p-4 rounded-3xl">
+        <h6 class="text-xs font-bold tracking-wider text-[#7a8ba8] uppercase mb-4 text-center">Desgaste em KM Rodados</h6>
+        <div id="chart-vtr-km" class="chart-container" style="height: 300px;"></div>
+    </div>
+</div>
+
+<!-- Tabela Analítica -->
+<div class="glass-panel p-4 rounded-3xl z-10 overflow-hidden">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+        <h6 class="text-xs font-bold tracking-wider text-blue-400 uppercase flex items-center gap-2">
+            <i class="fa-solid fa-table"></i> Detalhamento da Frota
+        </h6>
+        <div class="text-[9px] text-[#5a6f8a] uppercase tracking-widest">
+            * Os valores são referentes ao período aplicado no filtro global.
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto w-full">
+        <table id="table-viaturas-detalhe" class="table-dark-custom table w-full" style="width:100%">
+            <thead>
+                <tr>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Posição</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Viatura</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Total Chamados</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Efetivadas</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Canceladas (QTA)</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">KM Rodado</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">KM/Ocorrência</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Tempo Médio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Preenchido via JS -->
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,33 @@
+<div class="flex flex-col gap-4 w-full h-full relative z-10 overflow-hidden">
+    
+    <!-- Header/Heatmap Section -->
+    <div class="glass-panel p-4 rounded-3xl w-full flex-shrink-0">
+        <h6 class="text-sm font-bold tracking-wider text-purple-400 uppercase flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-fire"></i> Picos de Demanda (Mapa de Calor)
+        </h6>
+        <div id="chart-timeline-heatmap" class="w-full h-[220px]"></div>
+    </div>
+
+    <!-- Timeline/Logbook Section -->
+    <div class="glass-panel p-4 md:p-6 rounded-3xl w-full flex-1 flex flex-col overflow-hidden relative">
+        <h6 class="text-sm font-bold tracking-wider text-blue-400 uppercase flex items-center gap-2 mb-4">
+            <i class="fa-solid fa-clock-rotate-left"></i> Cronologia Operacional
+        </h6>
+        
+        <!-- Timeline Container (Scrollable) -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative px-2" id="timeline-container">
+            <!-- Linha guia central (ou esquerda dependendo do layout) -->
+            <div class="absolute left-6 top-0 bottom-0 w-px bg-white/10 z-0"></div>
+            
+            <!-- Items da timeline serão injetados aqui dinamicamente pelo app.js -->
+            <div id="timeline-feed" class="flex flex-col gap-4 relative z-10 py-2">
+                <!-- Skeleton Loading -->
+                <div class="flex items-center gap-4 animate-pulse">
+                    <div class="w-8 h-8 rounded-full bg-white/5"></div>
+                    <div class="flex-1 bg-white/5 h-16 rounded-2xl"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,85 @@
+<!-- ===== KPI CARDS ===== -->
+<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-4" id="kpi-container">
+    <!-- Injetado via JS -->
+</div>
+
+<!-- ===== CHARTS GRID ===== -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+
+    <!-- Coluna Principal (2/3) -->
+    <div class="xl:col-span-2 space-y-4">
+
+        <!-- Evolução Mensal -->
+        <div class="glass-panel p-4">
+            <div class="flex items-center justify-between mb-2">
+                <h6 class="text-xs font-bold tracking-wider text-yellow-400 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> Evolução Operacional
+                </h6>
+                <span class="text-[10px] text-[#5a6f8a]">Últimos 12 meses</span>
+            </div>
+            <div id="chart-evolucao" class="chart-container" style="height:260px;"></div>
+            <p class="text-[9px] text-gray-500 mt-2 italic text-center">* os valores são referentes ao ano atual versus o anterior</p>
+        </div>
+
+        <!-- Gráficos Secundários -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Distribuição por Natureza (Donut) -->
+            <div class="glass-panel p-4">
+                <h6 class="text-xs font-bold tracking-wider text-purple-400 uppercase flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-chart-pie"></i> Naturezas
+                </h6>
+                <div id="chart-natureza-donut" class="chart-container" style="height:200px;"></div>
+                <p class="text-[9px] text-gray-500 mt-2 italic text-center">* os valores são referentes ao período aplicado no filtro</p>
+            </div>
+
+            <!-- Atendimento por Dia da Semana -->
+            <div class="glass-panel p-4">
+                <h6 class="text-xs font-bold tracking-wider text-blue-400 uppercase flex items-center gap-2 mb-2">
+                    <i class="fa-regular fa-calendar-days"></i> Atendimento por Dia
+                </h6>
+                <div id="chart-dia-semana" class="chart-container" style="height:200px;"></div>
+                <p class="text-[9px] text-gray-500 mt-2 italic text-center">* os dados são referentes aos últimos 7 dias</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Coluna Direita (1/3) -->
+    <div class="space-y-4">
+
+        <!-- Prontidão Bar -->
+        <div class="glass-panel p-4">
+            <h6 class="text-xs font-bold tracking-wider text-emerald-400 uppercase flex items-center gap-2 mb-2">
+                <i class="fa-solid fa-chart-bar"></i> Prontidão
+            </h6>
+            <div id="chart-prontidao-bar" class="chart-container" style="height:140px;"></div>
+            <p class="text-[9px] text-gray-500 mt-2 italic text-center">* os valores são referentes ao período aplicado no filtro</p>
+        </div>
+
+        <!-- Ranking Viaturas -->
+        <div class="glass-panel p-4 flex-1">
+            <h6 class="text-xs font-bold tracking-wider text-yellow-400 uppercase flex items-center gap-2 mb-3">
+                <i class="fa-solid fa-trophy"></i> Desempenho de Viaturas
+            </h6>
+            <div class="overflow-y-auto max-h-[200px]">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Viatura</th>
+                            <th class="text-center">Ocorr.</th>
+                            <th class="text-right">KM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-viaturas-body">
+                        <!-- Injetado via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[9px] text-gray-500 mt-2 italic text-center">* os valores são referentes ao período aplicado no filtro</p>
+        </div>
+
+    </div>
+
+</div>

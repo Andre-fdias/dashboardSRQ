@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Operacional - Estação de Bombeiros São Roque</title>
+    
+    <!-- Tailwind CSS v4 Browser Compiler -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body class="bg-black text-gray-200 min-h-screen flex flex-col relative">
+
+    <!-- Efeito de Fumaça/Fogo Dourado no Rodapé -->
+    <div class="gold-smoke-glow"></div>
+
+    <!-- Loader -->
+    <div id="loader-overlay" class="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div class="spinner-border animate-spin inline-block w-12 h-12 border-4 rounded-full border-t-blue-600 border-r-transparent border-b-transparent border-l-transparent" role="status"></div>
+        <h4 class="mt-3 text-lg font-semibold text-white">Carregando Mapa Operacional...</h4>
+    </div>
+
+    <!-- Cabeçalho Principal (Gradient Blue-Gray) -->
+    <header class="bg-gradient-to-r from-[#1e3a8a] to-[#374151] border-b border-[#1e40af]/50 text-white h-[65px] px-4 flex items-center justify-between z-10 shrink-0 shadow-lg">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-fire-extinguisher text-2xl text-yellow-500 animate-pulse"></i>
+            <div>
+                <h1 class="text-sm font-extrabold tracking-wider flex items-center gap-2">
+                    <span class="text-yellow-400">15º GB • 2º SGB</span>
+                    <span class="text-white">ESTAÇÃO DE BOMBEIROS SÃO ROQUE</span>
+                </h1>
+                <p class="text-[10px] text-red-300 font-medium tracking-widest uppercase">PORTAL ANALÍTICO OPERACIONAL</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs font-semibold">
+            <!-- Botão Atualizar -->
+            <button class="bg-[#242526]/50 hover:bg-[#343536] border border-red-900 px-3 py-1.5 rounded-lg flex items-center gap-2 transition cursor-pointer text-gray-300" id="btn-refresh" title="Atualizar Dados">
+                <i class="fa-solid fa-arrows-rotate"></i> Atualizar Dados
+            </button>
+
+            <!-- Status de Conexão -->
+            <div class="flex items-center gap-2 text-gray-400 bg-black/30 px-2.5 py-1.5 rounded-lg border border-red-950">
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block animate-ping"></span>
+                <span>Conectado</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="wrapper flex flex-1 overflow-hidden z-10 relative">
+        <!-- Sidebar Compacta -->
+        <aside class="sidebar bg-[#090e18]/80 border-r border-white/5 w-[70px] flex flex-col items-center py-4 gap-6 shrink-0 backdrop-blur-xl">
+            <ul class="sidebar-menu flex flex-col gap-4 w-full items-center">
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Dashboard">
+                    <a href="index.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-house text-lg"></i></a>
+                </li>
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Ocorrências">
+                    <a href="ocorrencias.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-list text-lg"></i></a>
+                </li>
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Viaturas">
+                    <a href="viaturas.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-truck-fast text-lg"></i></a>
+                </li>
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Prontidões">
+                    <a href="prontidoes.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-users text-lg"></i></a>
+                </li>
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Naturezas">
+                    <a href="naturezas.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-fire text-lg"></i></a>
+                </li>
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Municípios">
+                    <a href="cidades.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-city text-lg"></i></a>
+                </li>
+                <li class="active w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5" title="Mapa Operacional">
+                    <a href="mapa.html" class="flex items-center justify-center w-full h-full text-blue-500"><i class="fa-solid fa-map-location-dot text-lg"></i></a>
+                </li>
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Linha do Tempo">
+                    <a href="timeline.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-timeline text-lg"></i></a>
+                </li>
+                <li class="w-12 h-12 rounded-xl flex items-center justify-content-center hover:bg-white/5 text-gray-400" title="Sobre o Sistema">
+                    <a href="sobre.html" class="flex items-center justify-center w-full h-full text-inherit"><i class="fa-solid fa-circle-info text-lg"></i></a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Área de Conteúdo -->
+        <main class="content-area flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <!-- Barra de Filtros -->
+            <div class="glass-panel p-3.5 rounded-3xl z-10" id="filters-container">
+                <!-- Injetado dinamicamente -->
+            </div>
+
+            <!-- Mapa Container -->
+            <div class="glass-panel p-3 rounded-3xl z-10 flex-1 flex flex-col relative min-h-[400px]">
+                <div class="absolute top-6 right-6 z-[1000] bg-black/80 border border-white/5 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-200">
+                    <div class="flex items-center gap-2">
+                        <input class="w-3.5 h-3.5 accent-blue-500" type="checkbox" id="toggle-heatmap">
+                        <label class="cursor-pointer" for="toggle-heatmap">Ativar Mapa de Calor</label>
+                    </div>
+                </div>
+                <div id="map" class="flex-1 w-full rounded-2xl border border-white/5 overflow-hidden min-h-[350px]"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bottom Navigation Mobile -->
+    <nav class="bottom-nav flex md:hidden bg-[#090e18]/80 backdrop-blur-xl border-t border-white/5">
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Dash</span></a>
+        <a href="ocorrencias.html" class="nav-item"><i class="fa-solid fa-list"></i><span>Lista</span></a>
+        <a href="mapa.html" class="nav-item active"><i class="fa-solid fa-map-location-dot"></i><span>Mapa</span></a>
+        <a href="sobre.html" class="nav-item"><i class="fa-solid fa-circle-info"></i><span>Sobre</span></a>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <script type="module" src="js/pages/mapa.js"></script>
+</body>
+</html>

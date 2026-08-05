@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EB SÃO ROQUE - Portal Analítico</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+    <!-- Loader -->
+    <div id="loader-overlay" class="fixed inset-0 z-[9999] bg-[#0a0e17]/95 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div class="spinner-border animate-spin inline-block w-12 h-12 border-4 rounded-full border-t-yellow-500 border-r-transparent border-b-transparent border-l-transparent" role="status"></div>
+        <h4 class="mt-3 text-lg font-semibold text-white tracking-widest uppercase">Carregando Dados...</h4>
+    </div>
+
+    <!-- ===== SIDEBAR TOGGLE (Mobile) ===== -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menu">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <!-- ===== HEADER ===== -->
+    <header class="bg-gradient-to-r from-[#0a0e17] to-[#0d1422] border-b border-[#1a2a4a] px-4 md:px-6 h-[65px] flex items-center justify-between shrink-0 sticky top-0 z-40">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-fire-extinguisher text-2xl text-yellow-400"></i>
+                <div>
+                    <h1 class="text-sm font-extrabold tracking-wider flex items-center gap-2">
+                        <span class="text-yellow-400">EB SÃO ROQUE</span>
+                        <span class="text-[#6b7fa0] text-xs font-normal">•</span>
+                        <span class="text-[#b0c0d8] text-xs font-medium">15º GB / 2º SGB</span>
+                    </h1>
+                    <p class="text-[9px] text-[#5a6f8a] font-medium tracking-widest uppercase">Portal Analítico Operacional</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs">
+            <!-- Data/Hora -->
+            <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-[#1a2a4a]">
+                <i class="fa-regular fa-calendar text-[#5a6f8a]"></i>
+                <span class="text-[#b0c0d8] font-medium" id="widget-date">--/--/----</span>
+                <span class="text-[#3d5068]">|</span>
+                <i class="fa-regular fa-clock text-[#5a6f8a]"></i>
+                <span class="text-yellow-400 font-bold" id="widget-time">--:--</span>
+            </div>
+
+            <!-- Status -->
+            <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-[#1a2a4a]">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-[#5a6f8a] text-[10px] font-medium">Online</span>
+            </div>
+
+            <!-- Refresh -->
+            <button class="bg-black/30 hover:bg-[#1a2a4a] border border-[#1a2a4a] px-3 py-1.5 rounded-xl transition text-[#7a8ba8] hover:text-[#e8edf5] cursor-pointer" id="btn-refresh" title="Atualizar">
+                <i class="fa-solid fa-rotate"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== LAYOUT PRINCIPAL ===== -->
+    <div class="flex">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-shield-halved"></i>
+                <div class="sidebar-brand-text">
+                    <h2>EB SÃO ROQUE</h2>
+                    <span>Comando Operacional</span>
+                </div>
+            </div>
+
+            <!-- Menu -->
+            <nav class="sidebar-menu">
+                <div class="sidebar-label">Módulos</div>
+                
+                <a href="#home" class="sidebar-item active" data-route="home">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <a href="#dejem" class="sidebar-item" data-route="dejem">
+                    <i class="fa-solid fa-user-clock"></i>
+                    <span class="sidebar-text">Dejem</span>
+                </a>
+                <a href="#ferias" class="sidebar-item" data-route="ferias">
+                    <i class="fa-solid fa-umbrella-beach"></i>
+                    <span class="sidebar-text">Férias</span>
+                </a>
+                <a href="#efetivo" class="sidebar-item" data-route="efetivo">
+                    <i class="fa-solid fa-users-viewfinder"></i>
+                    <span class="sidebar-text">Efetivo</span>
+                </a>
+
+                <div class="sidebar-label mt-4">Sistema</div>
+                <a href="#sobre" class="sidebar-item" data-route="sobre">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span class="sidebar-text">Sobre</span>
+                </a>
+            </nav>
+
+            <!-- Footer Sidebar -->
+            <div class="px-4 pb-4 mt-auto">
+                <div class="border-t border-[#1a2a4a] pt-4">
+                    <div class="flex items-center gap-3 text-[#5a6f8a] text-[10px]">
+                        <i class="fa-solid fa-version-tag"></i>
+                        <span>v3.0.0</span>
+                        <span class="text-[#3d5068]">•</span>
+                        <span>2026</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div class="main-wrapper flex flex-col relative w-full h-screen overflow-y-auto overflow-x-hidden p-4 md:p-6 pb-24 md:pb-6">
+            
+            <!-- DASHBOARD HEADER (Navbar Horizontal + Filtros) -->
+            <div id="dashboard-header" class="hidden flex-col gap-4 mb-4">
+                <!-- Sub-navbar do Dashboard -->
+                <div class="glass-panel overflow-x-auto rounded-xl custom-scrollbar border border-white/5">
+                    <div class="flex items-center min-w-max px-2 py-2 gap-1 dashboard-subnav text-sm">
+                        <a href="#home" class="subnav-item active px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="home"><i class="fa-solid fa-chart-line"></i> Visão Geral</a>
+                        <a href="#ocorrencias" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="ocorrencias"><i class="fa-solid fa-list-check"></i> Ocorrências <span class="badge ml-1 hidden" id="badge-ocorrencias-sub">0</span></a>
+                        <a href="#viaturas" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="viaturas"><i class="fa-solid fa-truck-fire"></i> Viaturas</a>
+                        <a href="#prontidoes" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="prontidoes"><i class="fa-solid fa-users-gear"></i> Efetivo & Naturezas</a>
+                        <div class="h-6 w-px bg-white/10 mx-2"></div>
+                        <a href="#mapa" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="mapa"><i class="fa-solid fa-map-location-dot"></i> Mapa</a>
+                        <a href="#timeline" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="timeline"><i class="fa-solid fa-timeline"></i> Timeline</a>
+                    </div>
+                </div>
+
+                <!-- Filtros (Movido do home.html) -->
+                <div class="glass-panel filter-bar">
+                    <div class="filter-group">
+                        <label><i class="fa-regular fa-hashtag mr-1"></i> ID / Talão</label>
+                        <input type="text" id="filter-id" placeholder="Ex: 8604016">
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fa-regular fa-calendar mr-1"></i> Data Inicial</label>
+                        <input type="text" id="filter-date-start" class="flatpickr-date" placeholder="dd/mm/aaaa">
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fa-regular fa-calendar mr-1"></i> Data Final</label>
+                        <input type="text" id="filter-date-end" class="flatpickr-date" placeholder="dd/mm/aaaa">
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fa-regular fa-flag mr-1"></i> Prontidão</label>
+                        <select id="filter-prontidao">
+                            <option value="TODOS">Todos</option>
+                            <option value="VERDE">Verde</option>
+                            <option value="AMARELA">Amarela</option>
+                            <option value="AZUL">Azul</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fa-solid fa-truck mr-1"></i> Viatura</label>
+                        <select id="filter-viatura">
+                            <option value="TODOS">Todos</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn-filter btn-filter-primary" id="btn-search">
+                            <i class="fa-solid fa-magnifying-glass"></i> Pesquisar
+                        </button>
+                        <button class="btn-filter btn-filter-secondary" id="btn-clear">
+                            <i class="fa-regular fa-trash-can"></i> Limpar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTEÚDO INJETADO DINAMICAMENTE AQUI -->
+            <div id="app-content"></div>
+        </div>
+    </div>
+
+    <!-- ===== BOTTOM NAV (Mobile) ===== -->
+    <nav class="bottom-nav" id="bottomNav">
+        <a href="#home" class="nav-item active" data-route="home"><i class="fa-solid fa-gauge-high"></i><span>Dash</span></a>
+        <a href="#ocorrencias" class="nav-item" data-route="ocorrencias"><i class="fa-solid fa-list-check"></i><span>Lista</span></a>
+        <a href="#mapa" class="nav-item" data-route="mapa"><i class="fa-solid fa-map-location-dot"></i><span>Mapa</span></a>
+        <a href="#sobre" class="nav-item" data-route="sobre"><i class="fa-solid fa-circle-info"></i><span>Sobre</span></a>
+    </nav>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <!-- Script de Roteamento -->
+    <script type="module" src="js/router.js"></script>
+    
+    <!-- Script Principal (App) -->
+    <script type="module" src="js/app.js"></script>
+
+</body>
+</html>

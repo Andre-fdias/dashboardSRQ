@@ -1,0 +1,35 @@
+<!-- Container Principal do Mapa -->
+<div class="w-full h-[80vh] relative z-10 glass-panel rounded-3xl overflow-hidden flex flex-col">
+    
+    <!-- Div do Leaflet -->
+    <div id="full-map" class="w-full h-full z-0"></div>
+    
+    <!-- Controles Flutuantes Superiores -->
+    <div class="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+        
+        <!-- Controle Camada (Dark / Satelite) -->
+        <div class="bg-[#0a0e17]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 flex shadow-lg">
+            <button id="btn-map-dark" class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-500/20 hover:bg-white/10 transition">Escuro</button>
+            <button id="btn-map-sat" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-white/10 transition">Satélite</button>
+        </div>
+        
+        <!-- Controle Visualização (Markers / Heatmap) -->
+        <div class="bg-[#0a0e17]/90 backdrop-blur-md p-1.5 rounded-xl border border-white/10 flex shadow-lg">
+            <button id="btn-map-markers" class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-500/20 hover:bg-white/10 transition"><i class="fa-solid fa-location-dot mr-1"></i> Pinos</button>
+            <button id="btn-map-heat" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-white/10 transition"><i class="fa-solid fa-fire mr-1"></i> Calor</button>
+        </div>
+        
+    </div>
+
+    <!-- Progresso de Geocodificação (Flutuante Inferior) -->
+    <div id="geocoding-status" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-[#0a0e17]/90 backdrop-blur-md border border-white/10 p-3 rounded-2xl shadow-xl w-64">
+        <div class="flex justify-between text-[10px] text-gray-300 font-bold uppercase mb-2">
+            <span>Geocodificando...</span>
+            <span id="geocoding-count">0/0</span>
+        </div>
+        <div class="w-full bg-white/10 rounded-full h-1.5">
+            <div id="geocoding-progress" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style="width: 0%"></div>
+        </div>
+    </div>
+
+</div>
