@@ -1,5 +1,92 @@
-<div class="glass-panel p-8 text-center mt-10">
-    <i class="fa-solid fa-person-digging text-6xl text-yellow-400 mb-6"></i>
-    <h2 class="text-2xl font-bold text-white mb-2">Módulo Dejem</h2>
-    <p class="text-[#5a6f8a]">Esta área está em desenvolvimento. Em breve você terá acesso a todas as estatísticas e controles da Dejem.</p>
+<div class="flex flex-col gap-6 w-full relative z-10">
+    
+    <!-- Filtros DEJEM -->
+    <div class="glass-panel p-4 rounded-3xl w-full">
+        <h6 class="text-sm font-bold tracking-wider text-blue-400 uppercase flex items-center gap-2 mb-4">
+            <i class="fa-solid fa-filter"></i> Filtros de Controle DEJEM
+        </h6>
+        
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            
+            <!-- Busca por Nome -->
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Nome ou RE</label>
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="dejem-filter-nome" placeholder="Buscar Nome..." class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-sm text-[#e5e7eb] focus:outline-none focus:border-blue-500/50 transition">
+                </div>
+            </div>
+
+            <!-- Busca por ID -->
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">ID DEJEM</label>
+                <div class="relative">
+                    <i class="fa-solid fa-hashtag absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="dejem-filter-id" placeholder="Ex: 5040" class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-sm text-[#e5e7eb] focus:outline-none focus:border-blue-500/50 transition">
+                </div>
+            </div>
+
+            <!-- Período Start -->
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Data Início</label>
+                <input type="date" id="dejem-filter-dateStart" class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl px-3 py-2 text-sm text-[#e5e7eb] focus:outline-none focus:border-blue-500/50 transition [color-scheme:dark]">
+            </div>
+
+            <!-- Período End -->
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Data Fim</label>
+                <input type="date" id="dejem-filter-dateEnd" class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl px-3 py-2 text-sm text-[#e5e7eb] focus:outline-none focus:border-blue-500/50 transition [color-scheme:dark]">
+            </div>
+
+            <!-- EB -->
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">EB</label>
+                <div class="relative">
+                    <select id="dejem-filter-eb" class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl py-2 pl-3 pr-8 text-sm text-[#e5e7eb] appearance-none focus:outline-none focus:border-blue-500/50 transition cursor-pointer">
+                        <option value="TODOS">Todos os EB</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Tabela DEJEM -->
+    <div class="glass-panel p-0 rounded-3xl w-full overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+            <h6 class="text-sm font-bold tracking-wider text-white uppercase flex items-center gap-2">
+                <i class="fa-solid fa-table-list text-blue-400"></i> Registros DEJEM
+            </h6>
+            <div class="text-xs text-gray-400 font-bold bg-[#0a0e17] px-3 py-1 rounded-lg" id="dejem-total-count">
+                Carregando...
+            </div>
+        </div>
+        
+        <div class="w-full overflow-x-auto max-h-[60vh]">
+            <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                <thead class="sticky top-0 bg-[#0a0e17] z-10 shadow-md">
+                    <tr>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">ID</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Nome e RE</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Status</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Data</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Horário</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">EB</th>
+                    </tr>
+                </thead>
+                <tbody id="dejem-table-body" class="divide-y divide-white/5 text-[#b0c0d8]">
+                    <!-- Skeleton Loader -->
+                    <tr class="animate-pulse">
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-8"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-32"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-16"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-20"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-16"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-24"></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

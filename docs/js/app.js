@@ -6,7 +6,7 @@
 
 import { initTheme } from './layout/theme.js';
 import { initSidebar } from './layout/sidebar.js';
-import { initDataStore, state, setFilter, applyFilters, forceRefresh, getUniqueValues } from './store/dataStore.js';
+import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues } from './store/dataStore.js';
 
 import { initRouter } from './router.js';
 
@@ -54,6 +54,8 @@ document.addEventListener('page-loaded', (e) => {
         initFullMap();
     } else if (route === 'timeline') {
         setTimeout(() => { initTimelineTab(); }, 100);
+    } else if (route === 'dejem') {
+        setTimeout(() => { initDejemTab(); }, 100);
     }
 });
 
@@ -1664,4 +1666,127 @@ function updateTimelineTab() {
         
         feedContainer.innerHTML = html;
     }
+}
+
+// ============================================
+// LÓGICA DA ABA DEJEM
+// ============================================
+
+function initDejemTab() {
+    if (!stateDejem.isLoaded) {
+        initDejemStore().then(() => {
+            setupDejemFilters();
+            renderDejemTable();
+        });
+    } else {
+        setupDejemFilters();
+        renderDejemTable();
+    }
+}
+
+function setupDejemFilters() {
+    const selEb = document.getElementById('dejem-filter-eb');
+    if (selEb && selEb.options.length <= 1) {
+        const ebs = getUniqueDejemValues('eb');
+        ebs.forEach(eb => {
+            const opt = document.createElement('option');
+            opt.value = eb;
+            opt.textContent = eb;
+            selEb.appendChild(opt);
+        });
+    }
+
+    const inputNome = document.getElementById('dejem-filter-nome');
+    const inputId = document.getElementById('dejem-filter-id');
+    const inputDateStart = document.getElementById('dejem-filter-dateStart');
+    const inputDateEnd = document.getElementById('dejem-filter-dateEnd');
+
+    if (inputNome) {
+        inputNome.value = stateDejem.filters.nome;
+        inputNome.oninput = (e) => {
+            setDejemFilter('nome', e.target.value);
+            applyDejemFilters();
+        };
+    }
+    
+    if (inputId) {
+        inputId.value = stateDejem.filters.id;
+        inputId.oninput = (e) => {
+            setDejemFilter('id', e.target.value);
+            applyDejemFilters();
+        };
+    }
+    
+    if (inputDateStart) {
+        inputDateStart.value = stateDejem.filters.dateStart;
+        inputDateStart.onchange = (e) => {
+            setDejemFilter('dateStart', e.target.value);
+            applyDejemFilters();
+        };
+    }
+    
+    if (inputDateEnd) {
+        inputDateEnd.value = stateDejem.filters.dateEnd;
+        inputDateEnd.onchange = (e) => {
+            setDejemFilter('dateEnd', e.target.value);
+            applyDejemFilters();
+        };
+    }
+    
+    if (selEb) {
+        selEb.value = stateDejem.filters.eb;
+        selEb.onchange = (e) => {
+            setDejemFilter('eb', e.target.value);
+            applyDejemFilters();
+        };
+    }
+}
+
+window.addEventListener('dejemDataUpdated', (e) => {
+    if (window.location.hash.includes('dejem')) {
+        renderDejemTable();
+    }
+});
+
+function renderDejemTable() {
+    const tbody = document.getElementById('dejem-table-body');
+    const totalCount = document.getElementById('dejem-total-count');
+    
+    if (!tbody || !stateDejem.filteredData) return;
+
+    if (totalCount) {
+        totalCount.textContent = `${stateDejem.filteredData.length} Registros`;
+    }
+
+    if (stateDejem.filteredData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum registro encontrado.</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    stateDejem.filteredData.forEach(item => {
+        const dataStr = item.data ? item.data.toLocaleDateString('pt-BR') : 'N/I';
+        
+        let statusBadge = '';
+        if (item.escalado === 'ESCALADO') {
+            statusBadge = `<span class="bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded text-[10px] font-bold">ESCALADO</span>`;
+        } else if (item.escalado === 'NÃO ESCALADO') {
+            statusBadge = `<span class="bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded text-[10px] font-bold">NÃO ESCALADO</span>`;
+        } else {
+            statusBadge = `<span class="bg-gray-500/20 text-gray-400 border border-gray-500/30 px-2 py-0.5 rounded text-[10px] font-bold">${item.escalado}</span>`;
+        }
+
+        html += `
+            <tr class="hover:bg-white/5 transition">
+                <td class="px-4 py-3 border-b border-white/5 font-mono text-xs text-blue-400">${item.id}</td>
+                <td class="px-4 py-3 border-b border-white/5 font-bold">${item.nome}</td>
+                <td class="px-4 py-3 border-b border-white/5">${statusBadge}</td>
+                <td class="px-4 py-3 border-b border-white/5 text-xs text-[#5a6f8a]">${dataStr}</td>
+                <td class="px-4 py-3 border-b border-white/5 text-xs text-[#5a6f8a]">${item.horaInicio} - ${item.horaFim}</td>
+                <td class="px-4 py-3 border-b border-white/5 text-xs font-bold text-gray-300">${item.eb}</td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
 }

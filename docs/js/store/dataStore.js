@@ -1,6 +1,6 @@
-import { fetchSpreadsheetData } from '../api/sheets.js';
+import { fetchSpreadsheetData, fetchDejemData } from '../api/sheets.js';
 
-const CACHE_KEY = 'dashboard_data_cache_v2';
+const CACHE_KEY = 'dashboard_data_cache_v3';
 const CACHE_TIME_KEY = 'dashboard_data_time_v2';
 const CACHE_FILTERS_KEY = 'dashboard_filters_v2';
 const CACHE_EXPIRATION_MS = 10 * 60 * 1000; // 10 minutos (conformeApps Script trigger)
@@ -166,4 +166,99 @@ export function forceRefresh() {
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
     initDataStore();
+}
+
+// ==========================================
+// STORE DEJEM
+// ==========================================
+export const stateDejem = {
+    rawData: [],
+    filteredData: [],
+    filters: {
+        nome: '',
+        dateStart: '',
+        dateEnd: '',
+        eb: 'TODOS',
+        id: ''
+    },
+    isLoaded: false
+};
+
+export async function initDejemStore() {
+    showLoader();
+    try {
+        const CACHE_DEJEM_KEY = 'dashboard_dejem_cache_v1';
+        const CACHE_DEJEM_TIME = 'dashboard_dejem_time_v1';
+        const now = new Date().getTime();
+        
+        const cachedData = localStorage.getItem(CACHE_DEJEM_KEY);
+        const cacheTime = localStorage.getItem(CACHE_DEJEM_TIME);
+        
+        let hasValidCache = false;
+        if (cachedData && cacheTime && (now - parseInt(cacheTime)) < CACHE_EXPIRATION_MS) {
+            try {
+                const parsed = JSON.parse(cachedData);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    stateDejem.rawData = parsed.map(item => {
+                        if (item.data) item.data = new Date(item.data);
+                        return item;
+                    });
+                    hasValidCache = true;
+                }
+            } catch (e) {}
+        }
+
+        if (!hasValidCache) {
+            console.log("Buscando dados da Planilha DEJEM");
+            stateDejem.rawData = await fetchDejemData();
+            try {
+                localStorage.setItem(CACHE_DEJEM_KEY, JSON.stringify(stateDejem.rawData));
+                localStorage.setItem(CACHE_DEJEM_TIME, now.toString());
+            } catch (e) {}
+        }
+        
+        stateDejem.isLoaded = true;
+        applyDejemFilters();
+        
+    } catch (error) {
+        console.error("Erro ao inicializar DejemStore:", error);
+    } finally {
+        hideLoader();
+    }
+}
+
+export function setDejemFilter(key, value) {
+    if (stateDejem.filters.hasOwnProperty(key)) {
+        stateDejem.filters[key] = value;
+    }
+}
+
+export function getUniqueDejemValues(field) {
+    const values = stateDejem.rawData.map(item => item[field]).filter(val => val && val.toString().trim() !== '');
+    return [...new Set(values)].sort();
+}
+
+export function applyDejemFilters() {
+    stateDejem.filteredData = stateDejem.rawData.filter(item => {
+        let match = true;
+        
+        if (stateDejem.filters.nome && !item.nome.includes(stateDejem.filters.nome.toUpperCase())) match = false;
+        if (stateDejem.filters.id && !item.id.includes(stateDejem.filters.id)) match = false;
+        
+        if (stateDejem.filters.dateStart) {
+            const start = new Date(stateDejem.filters.dateStart + 'T00:00:00');
+            if (item.data && item.data < start) match = false;
+        }
+        if (stateDejem.filters.dateEnd) {
+            const end = new Date(stateDejem.filters.dateEnd + 'T23:59:59');
+            if (item.data && item.data > end) match = false;
+        }
+
+        const ebFilter = stateDejem.filters.eb || 'TODOS';
+        if (ebFilter !== 'TODOS' && item.eb !== ebFilter) match = false;
+        
+        return match;
+    });
+
+    window.dispatchEvent(new CustomEvent('dejemDataUpdated', { detail: stateDejem.filteredData }));
 }

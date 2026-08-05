@@ -4,6 +4,7 @@
  */
 
 const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz-JkZhBDtC5rYVXhdKnaebtsBbOlY2Aj9jCjU-QdIHMjnPexh767DSWKru7LePHNJ_xdDw5R5octf/pub?output=xlsx';
+const DEJEM_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQU7P_JQZtrnFFHFkI8HDIAMnM9cK2TZBL_TBUn2GdTvTV2a3aEs9qCm--6DOfRSQ/pub?output=xlsx';
 
 export async function fetchSpreadsheetData() {
     const proxies = [
@@ -157,5 +158,112 @@ function processSheetData(rows, sheetName) {
             diaSemana: diaSemana,
             horaSaida: horaSaida
         };
-    }).filter(item => item !== null);
+    }).filter(row => row !== null);
+}
+
+// ==========================================
+// DEJEM - Nova Lógica de Integração
+// ==========================================
+
+export async function fetchDejemData() {
+    const proxies = [
+        DEJEM_URL,
+        'https://corsproxy.io/?' + encodeURIComponent(DEJEM_URL),
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(DEJEM_URL)
+    ];
+
+    let allData = null;
+    let lastError = null;
+
+    for (const url of proxies) {
+        try {
+            console.log("Tentando baixar DEJEM de:", url);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const arrayBuffer = await response.arrayBuffer();
+            if (!arrayBuffer || arrayBuffer.byteLength < 100) {
+                throw new Error("Arquivo muito pequeno");
+            }
+            
+            const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+            const sheetName = 'Controle de ID DEJEM';
+            
+            if (workbook.SheetNames.includes(sheetName)) {
+                const worksheet = workbook.Sheets[sheetName];
+                const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+                
+                // Dados começam na linha 3 (índice 2). Cabeçalhos na linha B3..
+                if (rawData.length > 2) {
+                    allData = processDejemSheetData(rawData.slice(2));
+                    console.log(`DEJEM parseou ${allData.length} linhas de dados válidas.`);
+                } else {
+                    console.warn(`Planilha DEJEM ignorada: Sem dados suficientes.`);
+                    allData = [];
+                }
+            } else {
+                throw new Error("Aba 'Controle de ID DEJEM' não encontrada no arquivo.");
+            }
+            
+            break;
+            
+        } catch (error) {
+            console.warn("Falha no proxy DEJEM:", url, error.message);
+            lastError = error;
+        }
+    }
+
+    if (allData === null) {
+        throw new Error("Todas as tentativas de baixar a planilha DEJEM falharam: " + (lastError ? lastError.message : ""));
+    }
+
+    return allData;
+}
+
+function processDejemSheetData(rows) {
+    return rows.map((row) => {
+        // Ignora linhas sem ID (coluna B = index 1)
+        if (!row || !row[1]) return null;
+
+        // Tratar a data (coluna E = index 4)
+        let rawDate = row[4];
+        let dateObj = null;
+        if (rawDate instanceof Date) {
+            dateObj = rawDate;
+        } else if (typeof rawDate === 'string') {
+            const parts = rawDate.split('/');
+            if (parts.length === 3) dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+            else dateObj = new Date(rawDate);
+        } else if (typeof rawDate === 'number') {
+            dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+        }
+
+        // B(1)=ID, C(2)=NOME, D(3)=ESCALADO, E(4)=DATA, F(5)=INICIO, G(6)=FIM, H(7)=EB
+        
+        // Parse seguro para hora
+        const formatHora = (val) => {
+            if (!val) return '';
+            if (val instanceof Date) return val.getHours().toString().padStart(2,'0') + ':' + val.getMinutes().toString().padStart(2,'0');
+            if (typeof val === 'number') {
+                const totalMins = Math.round(val * 24 * 60);
+                return Math.floor(totalMins / 60).toString().padStart(2,'0') + ':' + (totalMins % 60).toString().padStart(2,'0');
+            }
+            const s = String(val).trim();
+            if (s.includes('1899') || s.includes('GMT')) {
+                const d = new Date(s);
+                if (!isNaN(d.getTime())) return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+            }
+            return s;
+        };
+
+        return {
+            id: String(row[1]).trim(),
+            nome: row[2] ? String(row[2]).trim().toUpperCase() : '',
+            escalado: row[3] ? String(row[3]).trim().toUpperCase() : '',
+            data: dateObj && !isNaN(dateObj.getTime()) ? dateObj : null,
+            horaInicio: formatHora(row[5]),
+            horaFim: formatHora(row[6]),
+            eb: row[7] ? String(row[7]).trim().toUpperCase() : ''
+        };
+    }).filter(row => row !== null);
 }
