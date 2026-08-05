@@ -1936,6 +1936,7 @@ function renderAbastecimentoDashboard() {
             const dataStr = item.data ? item.data.toLocaleDateString('pt-BR') : 'N/I';
             const valFormated = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor);
             const volFormated = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.volume) + ' L';
+            const kmFormated = new Intl.NumberFormat('pt-BR').format(item.km);
             
             const kmlStr = item.kml_linha ? item.kml_linha : '--';
 
@@ -1945,7 +1946,7 @@ function renderAbastecimentoDashboard() {
                     <td class="px-4 py-3 border-b border-white/5 font-mono font-bold text-emerald-400">${item.prefixo}</td>
                     <td class="px-4 py-3 border-b border-white/5 font-mono text-xs text-gray-400">${item.placa}</td>
                     <td class="px-4 py-3 border-b border-white/5 font-bold text-xs">${item.responsavel}</td>
-                    <td class="px-4 py-3 border-b border-white/5 text-xs text-gray-300">${item.km}</td>
+                    <td class="px-4 py-3 border-b border-white/5 text-xs text-gray-300">${kmFormated}</td>
                     <td class="px-4 py-3 border-b border-white/5 text-xs text-blue-400 font-bold text-right">${volFormated}</td>
                     <td class="px-4 py-3 border-b border-white/5 text-xs text-red-400 font-bold text-right">${valFormated}</td>
                     <td class="px-4 py-3 border-b border-white/5 text-xs text-purple-400 font-bold text-right bg-purple-500/5">${kmlStr}</td>

@@ -370,12 +370,20 @@ function processAbastecimentoSheetData(rows) {
             return isNaN(n) ? 0 : n;
         };
 
+        const parseKm = (val) => {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            const clean = String(val).replace(/\./g, '').trim(); // Remove pontos de milhar
+            const n = parseInt(clean);
+            return isNaN(n) ? 0 : n;
+        };
+
         return {
             prefixo: String(row[0]).trim(),
             responsavel: row[1] ? String(row[1]).trim().toUpperCase() : '',
             placa: row[2] ? String(row[2]).trim().toUpperCase() : '',
             data: dateObj && !isNaN(dateObj.getTime()) ? dateObj : null,
-            km: row[4] ? String(row[4]).trim() : '',
+            km: parseKm(row[4]),
             volume: parseVol(row[5]),
             valor: parseValor(row[6]),
             combustivel: row[7] ? String(row[7]).trim().toUpperCase() : '',
