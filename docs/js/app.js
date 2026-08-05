@@ -2048,27 +2048,50 @@ window.addEventListener('frequenciaDataUpdated', () => {
 function renderFrequenciaDashboard() {
     const data = stateFrequencia.filteredData;
     
-    let trabalhando = 0;
-    let ferias = 0;
-    let lp = 0;
+    let totalAA = 0;
+    let totalDiarias = 0;
+    let afastamentos = 0;
     let faltas = 0;
     
     const tbodyHtml = data.map(item => {
         const d = item.data ? item.data.toLocaleDateString('pt-BR') : '--/--/----';
-        const status = item.status.toUpperCase();
+        const rawStatus = item.status.trim().toUpperCase();
         
-        // Regras de contagem
-        if (status === 'F' || status === '1/2 D.A.') faltas++;
-        else if (status === 'FÉRIAS' || status === 'FERIAS') ferias++;
-        else if (status === 'LP') lp++;
-        else trabalhando++; // Restante consideramos trabalhando (ADM/PRONT)
+        let statusDisplay = rawStatus === '' ? 'NORMAL' : rawStatus;
+        let aa = 0;
+        let meiasDiarias = 0;
+        
+        // Interpretação baseada nas regras PM F-25
+        if (rawStatus === '0') {
+            aa = 1; meiasDiarias = 0; statusDisplay = '< 8 HORAS';
+        } else if (rawStatus === '1') {
+            aa = 1; meiasDiarias = 1; statusDisplay = '8 a 12 HORAS';
+        } else if (rawStatus === '2') {
+            aa = 1; meiasDiarias = 2; statusDisplay = '12 a 18 HORAS';
+        } else if (rawStatus === '3') {
+            aa = 1; meiasDiarias = 3; statusDisplay = '18 a 24 HORAS';
+        } else if (rawStatus === 'F' || rawStatus === 'LP' || rawStatus === 'A' || rawStatus === 'FÉRIAS' || rawStatus === 'FERIAS') {
+            afastamentos++;
+            if (rawStatus === 'F' || rawStatus === 'FÉRIAS' || rawStatus === 'FERIAS') statusDisplay = 'FÉRIAS';
+            if (rawStatus === 'LP') statusDisplay = 'LICENÇA-PRÊMIO';
+            if (rawStatus === 'A') statusDisplay = 'AFASTAMENTO (OUTROS)';
+        } else if (rawStatus === 'FS') {
+            faltas++;
+            statusDisplay = 'FALTA AO SERVIÇO';
+        } else if (rawStatus === '') {
+            statusDisplay = 'FOLGA / S.L.';
+        } else {
+            statusDisplay = rawStatus;
+        }
+        
+        totalAA += aa;
+        totalDiarias += meiasDiarias;
         
         // Cores de status
-        let statusBadge = `<span class="px-2 py-1 rounded-md bg-white/5 text-gray-300 text-[10px] font-bold">${item.status}</span>`;
-        if (status === 'F' || status === '1/2 D.A.') statusBadge = `<span class="px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-[10px] font-bold border border-red-500/20">${item.status}</span>`;
-        if (status === 'LP') statusBadge = `<span class="px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/20">${item.status}</span>`;
-        if (status === 'FÉRIAS' || status === 'FERIAS') statusBadge = `<span class="px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-400 text-[10px] font-bold border border-yellow-500/20">${item.status}</span>`;
-        if (status === 'A' || status === '1' || status === '2') statusBadge = `<span class="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">${item.status}</span>`;
+        let statusBadge = `<span class="px-2 py-1 rounded-md bg-white/5 text-gray-300 text-[10px] font-bold border border-white/10">${statusDisplay}</span>`;
+        if (rawStatus === 'FS') statusBadge = `<span class="px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-[10px] font-bold border border-red-500/20">${statusDisplay}</span>`;
+        if (['0','1','2','3'].includes(rawStatus)) statusBadge = `<span class="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">${statusDisplay}</span>`;
+        if (['F','LP','A', 'FÉRIAS', 'FERIAS'].includes(rawStatus)) statusBadge = `<span class="px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-400 text-[10px] font-bold border border-yellow-500/20">${statusDisplay}</span>`;
 
         return [
             d,
@@ -2076,15 +2099,24 @@ function renderFrequenciaDashboard() {
             item.re,
             item.nome,
             item.posto,
-            statusBadge
+            statusBadge,
+            `<span class="font-mono text-xs text-blue-400 text-center w-full block">${meiasDiarias}</span>`,
+            `<span class="font-mono text-xs text-emerald-400 text-center w-full block">${aa}</span>`
         ];
     });
 
     // Atualiza KPIs
-    document.getElementById('freq-card-trabalho').innerText = trabalhando;
-    document.getElementById('freq-card-ferias').innerText = ferias;
-    document.getElementById('freq-card-lp').innerText = lp;
-    document.getElementById('freq-card-faltas').innerText = faltas;
+    const elAa = document.getElementById('freq-card-aa');
+    if(elAa) elAa.innerText = totalAA;
+    
+    const elDiarias = document.getElementById('freq-card-diarias');
+    if(elDiarias) elDiarias.innerText = totalDiarias;
+    
+    const elAfast = document.getElementById('freq-card-afastamentos');
+    if(elAfast) elAfast.innerText = afastamentos;
+    
+    const elFaltas = document.getElementById('freq-card-faltas');
+    if(elFaltas) elFaltas.innerText = faltas;
 
     // Atualiza DataTable
     if (freqDataTable) {

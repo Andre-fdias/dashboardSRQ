@@ -35,55 +35,55 @@
 
     <!-- Mini Cards Dashboard -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-        <!-- Presentes / ADM -->
+        <!-- Vales Alimentação (A.A.) -->
         <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
             <div class="absolute -right-6 -top-6 text-emerald-500/10 group-hover:text-emerald-500/20 transition-colors duration-500">
-                <i class="fa-solid fa-building-user text-8xl transform -rotate-12"></i>
+                <i class="fa-solid fa-utensils text-8xl transform -rotate-12"></i>
             </div>
             <div class="relative z-10">
-                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Trabalhando (ADM/PRONT)</p>
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Vales-Alimentação</p>
                 <div class="flex items-end gap-2">
-                    <span class="text-3xl font-black text-white" id="freq-card-trabalho">0</span>
-                    <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
+                    <span class="text-3xl font-black text-white" id="freq-card-aa">0</span>
+                    <span class="text-xs font-bold text-gray-400 mb-1.5">vales</span>
                 </div>
             </div>
         </div>
 
-        <!-- Férias -->
+        <!-- Meias Diárias -->
+        <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 text-blue-500/10 group-hover:text-blue-500/20 transition-colors duration-500">
+                <i class="fa-solid fa-coins text-8xl transform -rotate-12"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Meias Diárias</p>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-black text-white" id="freq-card-diarias">0</span>
+                    <span class="text-xs font-bold text-gray-400 mb-1.5">cotas</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Afastamentos -->
         <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
             <div class="absolute -right-6 -top-6 text-yellow-500/10 group-hover:text-yellow-500/20 transition-colors duration-500">
                 <i class="fa-solid fa-umbrella-beach text-8xl transform -rotate-12"></i>
             </div>
             <div class="relative z-10">
-                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Férias</p>
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Afastamentos (F/LP/A)</p>
                 <div class="flex items-end gap-2">
-                    <span class="text-3xl font-black text-white" id="freq-card-ferias">0</span>
+                    <span class="text-3xl font-black text-white" id="freq-card-afastamentos">0</span>
                     <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
                 </div>
             </div>
         </div>
 
-        <!-- Licença Prêmio -->
-        <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
-            <div class="absolute -right-6 -top-6 text-blue-500/10 group-hover:text-blue-500/20 transition-colors duration-500">
-                <i class="fa-solid fa-award text-8xl transform -rotate-12"></i>
-            </div>
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Licença Prêmio</p>
-                <div class="flex items-end gap-2">
-                    <span class="text-3xl font-black text-white" id="freq-card-lp">0</span>
-                    <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Faltas / D.A. -->
+        <!-- Faltas -->
         <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
             <div class="absolute -right-6 -top-6 text-red-500/10 group-hover:text-red-500/20 transition-colors duration-500">
                 <i class="fa-solid fa-user-xmark text-8xl transform -rotate-12"></i>
             </div>
             <div class="relative z-10">
-                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Faltas / 1/2 D.A.</p>
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Faltas ao Serviço</p>
                 <div class="flex items-end gap-2">
                     <span class="text-3xl font-black text-white" id="freq-card-faltas">0</span>
                     <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
@@ -110,6 +110,8 @@
                         <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Nome</th>
                         <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Posto/Grad</th>
                         <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Status</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5 text-center">1/2 Diária</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5 text-center">A.A. (Vales)</th>
                     </tr>
                 </thead>
                 <tbody id="freq-table-body" class="divide-y divide-white/5 text-[#b0c0d8]">
@@ -121,6 +123,8 @@
                         <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-32"></div></td>
                         <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-16"></div></td>
                         <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-12"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-8 mx-auto"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-8 mx-auto"></div></td>
                     </tr>
                 </tbody>
             </table>

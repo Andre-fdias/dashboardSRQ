@@ -6,8 +6,7 @@
 const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz-JkZhBDtC5rYVXhdKnaebtsBbOlY2Aj9jCjU-QdIHMjnPexh767DSWKru7LePHNJ_xdDw5R5octf/pub?output=xlsx';
 const DEJEM_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQU7P_JQZtrnFFHFkI8HDIAMnM9cK2TZBL_TBUn2GdTvTV2a3aEs9qCm--6DOfRSQ/pub?output=xlsx';
 const ABASTECIMENTO_URL = BASE_URL; // Usa a mesma planilha do Ocorrências agora!
-// URL base da planilha temporária (substitua pelo link publicado do ETL Frequencia depois)
-let FREQUENCIA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-...?output=xlsx'; 
+let FREQUENCIA_URL = BASE_URL; // Aba "ETL Frequência" na Planilha Mestre 
 
 export function setFrequenciaUrl(url) {
     FREQUENCIA_URL = url;
