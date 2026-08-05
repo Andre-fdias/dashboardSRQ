@@ -610,3 +610,12 @@ body {
     border-color: #fbbf24;
     box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.1);
 }
+
+/* Simple DataTables Dark Mode Fixes */
+.dataTable-wrapper { color: #b0c0d8; font-size: 0.875rem; }
+.dataTable-top, .dataTable-bottom { padding: 1rem; }
+.dataTable-input { background: rgba(10, 14, 23, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); color: #fff; border-radius: 0.5rem; padding: 0.5rem 1rem; }
+.dataTable-selector { background: rgba(10, 14, 23, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); color: #fff; border-radius: 0.5rem; padding: 0.25rem 1rem; }
+.dataTable-pagination a { background: transparent !important; color: #b0c0d8 !important; border: none !important; }
+.dataTable-pagination li.active a { background: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important; font-weight: bold; border-radius: 0.25rem; }
+.dataTable-pagination a:hover { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; border-radius: 0.25rem; }

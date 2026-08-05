@@ -14,6 +14,7 @@ import { initRouter } from './router.js';
 let charts = {};
 let homeMap = null;
 let heatLayer = null;
+let abastDataTable = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
@@ -1855,6 +1856,7 @@ window.addEventListener('abastecimentoDataUpdated', (e) => {
 
 function renderAbastecimentoDashboard() {
     const tbody = document.getElementById('abast-table-body');
+    const tableEl = document.getElementById('abast-table');
     const cardValor = document.getElementById('abast-card-valor');
     const cardVolume = document.getElementById('abast-card-volume');
     const cardCount = document.getElementById('abast-card-count');
@@ -1915,11 +1917,18 @@ function renderAbastecimentoDashboard() {
         avgKml = (totalValidDistance / totalValidVolume).toFixed(2).replace('.', ',');
     }
 
+    // Ordenação decrescente por Data
+    stateAbastecimento.filteredData.sort((a, b) => b.data - a.data);
+
     let html = '';
     
     if (count === 0) {
-        html = `<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">Nenhum registro encontrado.</td></tr>`;
+        html = `<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500">Nenhum registro encontrado.</td></tr>`;
     } else {
+        if (abastDataTable) {
+            abastDataTable.destroy();
+        }
+        
         stateAbastecimento.filteredData.forEach(item => {
             totalValor += item.valor;
             totalVolume += item.volume;
@@ -1947,6 +1956,21 @@ function renderAbastecimentoDashboard() {
     }
 
     tbody.innerHTML = html;
+    
+    // Iniciar DataTables
+    if (count > 0 && tableEl) {
+        abastDataTable = new simpleDatatables.DataTable(tableEl, {
+            searchable: true,
+            fixedHeight: true,
+            perPage: 15,
+            labels: {
+                placeholder: "Pesquisar abastecimento...",
+                perPage: "itens por página",
+                noRows: "Nenhum registro encontrado",
+                info: "Mostrando {start} até {end} de {rows} registros",
+            }
+        });
+    }
     
     if (cardCount) cardCount.textContent = count;
     if (cardValor) cardValor.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValor);
