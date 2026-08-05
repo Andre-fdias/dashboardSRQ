@@ -6,7 +6,7 @@
 
 import { initTheme } from './layout/theme.js';
 import { initSidebar } from './layout/sidebar.js';
-import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues, stateAbastecimento, initAbastecimentoStore, setAbastecimentoFilter, applyAbastecimentoFilters, getUniqueAbastecimentoValues } from './store/dataStore.js';
+import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues, stateAbastecimento, initAbastecimentoStore, setAbastecimentoFilter, applyAbastecimentoFilters, getUniqueAbastecimentoValues, stateFrequencia, initFrequenciaStore, setFrequenciaFilter, applyFrequenciaFilters } from './store/dataStore.js';
 
 import { initRouter } from './router.js';
 
@@ -59,6 +59,8 @@ document.addEventListener('page-loaded', (e) => {
         setTimeout(() => { initDejemTab(); }, 100);
     } else if (route === 'abastecimento') {
         setTimeout(() => { initAbastecimentoTab(); }, 100);
+    } else if (route === 'frequencia') {
+        setTimeout(() => { initFrequenciaTab(); }, 100);
     }
 });
 
@@ -1977,4 +1979,118 @@ function renderAbastecimentoDashboard() {
     if (cardValor) cardValor.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValor);
     if (cardVolume) cardVolume.textContent = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalVolume) + ' L';
     if (cardKml) cardKml.textContent = avgKml;
+}
+
+// ==========================================
+// FREQUENCIA - Funções da Tela
+// ==========================================
+
+let freqDataTable = null;
+
+async function initFrequenciaTab() {
+    if (!stateFrequencia.isLoaded) {
+        await initFrequenciaStore();
+    }
+    
+    // Bind listeners
+    const monthInput = document.getElementById('freq-filter-month');
+    const searchInput = document.getElementById('freq-filter-search');
+    const btnRefresh = document.getElementById('freq-btn-refresh');
+
+    if (monthInput) {
+        monthInput.value = stateFrequencia.filters.month;
+        monthInput.addEventListener('change', (e) => {
+            setFrequenciaFilter('month', e.target.value);
+            applyFrequenciaFilters();
+        });
+    }
+
+    if (searchInput) {
+        searchInput.value = stateFrequencia.filters.search;
+        searchInput.addEventListener('input', (e) => {
+            setFrequenciaFilter('search', e.target.value);
+            applyFrequenciaFilters();
+        });
+    }
+
+    if (btnRefresh) {
+        btnRefresh.addEventListener('click', async () => {
+            await initFrequenciaStore();
+        });
+    }
+    
+    // Configura o DataTable
+    const tableEl = document.getElementById('freq-table');
+    if (tableEl && !freqDataTable) {
+        freqDataTable = new simpleDatatables.DataTable(tableEl, {
+            searchable: false, // Busca customizada já implementada
+            perPage: 15,
+            perPageSelect: [15, 25, 50, 100],
+            labels: {
+                placeholder: "Pesquisar...",
+                perPage: "linhas por página",
+                noRows: "Nenhum registro encontrado",
+                info: "Mostrando {start} a {end} de {rows} registros"
+            }
+        });
+    }
+    
+    renderFrequenciaDashboard();
+}
+
+window.addEventListener('frequenciaDataUpdated', () => {
+    const currentRoute = window.location.hash.replace('#', '') || 'home';
+    if (currentRoute === 'frequencia') {
+        renderFrequenciaDashboard();
+    }
+});
+
+function renderFrequenciaDashboard() {
+    const data = stateFrequencia.filteredData;
+    
+    let trabalhando = 0;
+    let ferias = 0;
+    let lp = 0;
+    let faltas = 0;
+    
+    const tbodyHtml = data.map(item => {
+        const d = item.data ? item.data.toLocaleDateString('pt-BR') : '--/--/----';
+        const status = item.status.toUpperCase();
+        
+        // Regras de contagem
+        if (status === 'F' || status === '1/2 D.A.') faltas++;
+        else if (status === 'FÉRIAS' || status === 'FERIAS') ferias++;
+        else if (status === 'LP') lp++;
+        else trabalhando++; // Restante consideramos trabalhando (ADM/PRONT)
+        
+        // Cores de status
+        let statusBadge = `<span class="px-2 py-1 rounded-md bg-white/5 text-gray-300 text-[10px] font-bold">${item.status}</span>`;
+        if (status === 'F' || status === '1/2 D.A.') statusBadge = `<span class="px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-[10px] font-bold border border-red-500/20">${item.status}</span>`;
+        if (status === 'LP') statusBadge = `<span class="px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/20">${item.status}</span>`;
+        if (status === 'FÉRIAS' || status === 'FERIAS') statusBadge = `<span class="px-2 py-1 rounded-md bg-yellow-500/10 text-yellow-400 text-[10px] font-bold border border-yellow-500/20">${item.status}</span>`;
+        if (status === 'A' || status === '1' || status === '2') statusBadge = `<span class="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">${item.status}</span>`;
+
+        return [
+            d,
+            item.tipo,
+            item.re,
+            item.nome,
+            item.posto,
+            statusBadge
+        ];
+    });
+
+    // Atualiza KPIs
+    document.getElementById('freq-card-trabalho').innerText = trabalhando;
+    document.getElementById('freq-card-ferias').innerText = ferias;
+    document.getElementById('freq-card-lp').innerText = lp;
+    document.getElementById('freq-card-faltas').innerText = faltas;
+
+    // Atualiza DataTable
+    if (freqDataTable) {
+        freqDataTable.rows.remove(Array.from(Array(freqDataTable.data.data.length).keys()));
+        if (tbodyHtml.length > 0) {
+            freqDataTable.insert({ data: tbodyHtml });
+        }
+    }
 }

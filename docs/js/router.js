@@ -13,7 +13,8 @@ const routes = {
     'dejem': 'pages/dejem.html',
     'abastecimento': 'pages/abastecimento.html',
     'ferias': 'pages/ferias.html',
-    'efetivo': 'pages/efetivo.html'
+    'efetivo': 'pages/efetivo.html',
+    'frequencia': 'pages/frequencia.html'
 };
 
 const dashboardRoutes = ['home', 'ocorrencias', 'viaturas', 'prontidoes', 'naturezas', 'municipios', 'mapa', 'timeline'];

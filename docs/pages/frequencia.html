@@ -1,0 +1,129 @@
+<div class="h-full flex flex-col gap-6 animate-fade-in p-2 md:p-4">
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 w-full">
+        <div>
+            <h2 class="text-xl font-black tracking-widest text-white uppercase flex items-center gap-2">
+                <i class="fa-solid fa-calendar-check text-purple-400"></i> Controle de Frequência
+            </h2>
+            <p class="text-xs text-[#5a6f8a] font-medium tracking-wider mt-1 uppercase">
+                Monitoramento de efetivo, férias, licenças e escalas
+            </p>
+        </div>
+
+        <div class="flex items-center gap-3 w-full md:w-auto">
+            <!-- Data Mês Inicial -->
+            <div class="flex flex-col gap-1 w-36">
+                <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Mês Início</label>
+                <input type="month" id="freq-filter-month" class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl px-3 py-2 text-xs text-[#e5e7eb] focus:outline-none focus:border-purple-500/50 transition [color-scheme:dark]">
+            </div>
+
+            <!-- Busca por Nome / RE -->
+            <div class="flex flex-col gap-1 w-48">
+                <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Policial (RE ou Nome)</label>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                    <input type="text" id="freq-filter-search" placeholder="Buscar..." class="w-full bg-[#0a0e17]/50 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-xs text-[#e5e7eb] focus:outline-none focus:border-purple-500/50 transition">
+                </div>
+            </div>
+            
+            <button id="freq-btn-refresh" class="h-[34px] w-[34px] mt-[18px] bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center justify-center text-gray-400 hover:text-white transition group relative">
+                <i class="fa-solid fa-rotate-right group-hover:rotate-180 transition-transform duration-500"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mini Cards Dashboard -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+        <!-- Presentes / ADM -->
+        <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 text-emerald-500/10 group-hover:text-emerald-500/20 transition-colors duration-500">
+                <i class="fa-solid fa-building-user text-8xl transform -rotate-12"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Trabalhando (ADM/PRONT)</p>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-black text-white" id="freq-card-trabalho">0</span>
+                    <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Férias -->
+        <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 text-yellow-500/10 group-hover:text-yellow-500/20 transition-colors duration-500">
+                <i class="fa-solid fa-umbrella-beach text-8xl transform -rotate-12"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Férias</p>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-black text-white" id="freq-card-ferias">0</span>
+                    <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Licença Prêmio -->
+        <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 text-blue-500/10 group-hover:text-blue-500/20 transition-colors duration-500">
+                <i class="fa-solid fa-award text-8xl transform -rotate-12"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Licença Prêmio</p>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-black text-white" id="freq-card-lp">0</span>
+                    <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Faltas / D.A. -->
+        <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 text-red-500/10 group-hover:text-red-500/20 transition-colors duration-500">
+                <i class="fa-solid fa-user-xmark text-8xl transform -rotate-12"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Faltas / 1/2 D.A.</p>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-black text-white" id="freq-card-faltas">0</span>
+                    <span class="text-xs font-bold text-gray-400 mb-1.5">dias/homem</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="glass-panel p-0 rounded-3xl w-full overflow-hidden flex flex-col">
+        <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+            <h6 class="text-sm font-bold tracking-wider text-white uppercase flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-purple-400"></i> Histórico de Frequência
+            </h6>
+        </div>
+        
+        <div class="w-full overflow-x-auto max-h-[55vh]">
+            <table id="freq-table" class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                <thead class="sticky top-0 bg-[#0a0e17] z-10 shadow-md">
+                    <tr>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Data</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Tipo Escala</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">RE</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Nome</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Posto/Grad</th>
+                        <th class="px-4 py-3 font-bold text-[#5a6f8a] uppercase tracking-wider text-[10px] border-b border-white/5">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="freq-table-body" class="divide-y divide-white/5 text-[#b0c0d8]">
+                    <!-- Skeleton Loader -->
+                    <tr class="animate-pulse">
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-16"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-20"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-16"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-32"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-16"></div></td>
+                        <td class="px-4 py-3"><div class="h-4 bg-white/10 rounded w-12"></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

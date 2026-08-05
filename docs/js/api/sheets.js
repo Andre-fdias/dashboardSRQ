@@ -6,6 +6,12 @@
 const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz-JkZhBDtC5rYVXhdKnaebtsBbOlY2Aj9jCjU-QdIHMjnPexh767DSWKru7LePHNJ_xdDw5R5octf/pub?output=xlsx';
 const DEJEM_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQU7P_JQZtrnFFHFkI8HDIAMnM9cK2TZBL_TBUn2GdTvTV2a3aEs9qCm--6DOfRSQ/pub?output=xlsx';
 const ABASTECIMENTO_URL = BASE_URL; // Usa a mesma planilha do Ocorrências agora!
+// URL base da planilha temporária (substitua pelo link publicado do ETL Frequencia depois)
+let FREQUENCIA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-...?output=xlsx'; 
+
+export function setFrequenciaUrl(url) {
+    FREQUENCIA_URL = url;
+}
 
 export async function fetchSpreadsheetData() {
     const proxies = [
@@ -387,7 +393,98 @@ function processAbastecimentoSheetData(rows) {
             volume: parseVol(row[5]),
             valor: parseValor(row[6]),
             combustivel: row[7] ? String(row[7]).trim().toUpperCase() : '',
+            aditivo: row[8] ? String(row[8]).trim().toUpperCase() : '',
+            pelotao: row[9] ? String(row[9]).trim().toUpperCase() : '',
             posto: row[10] ? String(row[10]).trim().toUpperCase() : ''
         };
-    }).filter(row => row !== null);
+    }).filter(item => item !== null);
+}
+
+// ==========================================
+// FREQUENCIA - Leitura da Aba ETL
+// ==========================================
+
+export async function fetchFrequenciaData(url) {
+    const targetUrl = url || FREQUENCIA_URL;
+    const proxies = [
+        targetUrl,
+        'https://corsproxy.io/?' + encodeURIComponent(targetUrl),
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl)
+    ];
+
+    let allData = null;
+    let lastError = null;
+
+    for (const pUrl of proxies) {
+        try {
+            console.log("Tentando baixar FREQUENCIA de:", pUrl);
+            const response = await fetch(pUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const arrayBuffer = await response.arrayBuffer();
+            if (!arrayBuffer || arrayBuffer.byteLength < 100) {
+                throw new Error("Arquivo muito pequeno");
+            }
+            
+            const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+            
+            // Busca a aba específica de ETL Frequência
+            const sheetName = workbook.SheetNames.find(s => s.toUpperCase().includes('ETL FREQU')) || workbook.SheetNames[0];
+            
+            if (sheetName) {
+                const worksheet = workbook.Sheets[sheetName];
+                const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+                
+                if (rawData.length > 1) {
+                    allData = processFrequenciaSheetData(rawData.slice(1));
+                    console.log(`FREQUENCIA parseou ${allData.length} linhas da aba ${sheetName}.`);
+                } else {
+                    console.warn(`Planilha FREQUENCIA ignorada: Sem dados.`);
+                    allData = [];
+                }
+            } else {
+                throw new Error("Nenhuma aba encontrada na planilha de Frequencia.");
+            }
+            
+            break;
+            
+        } catch (error) {
+            console.warn("Falha no proxy FREQUENCIA:", pUrl, error.message);
+            lastError = error;
+        }
+    }
+
+    if (allData === null) {
+        throw new Error("Todas as tentativas de baixar a planilha FREQUENCIA falharam: " + (lastError ? lastError.message : ""));
+    }
+
+    return allData;
+}
+
+function processFrequenciaSheetData(rows) {
+    return rows.map((row) => {
+        if (!row || (!row[2] && !row[3])) return null; // Ignora se não tiver RE nem Nome
+        
+        // Colunas do ETL: Data(0), Tipo(1), RE(2), Nome(3), Posto(4), Lancamento(5)
+        let rawDate = row[0];
+        let dateObj = null;
+        if (rawDate instanceof Date) {
+            dateObj = rawDate;
+        } else if (typeof rawDate === 'string') {
+            const parts = rawDate.split('-');
+            if (parts.length === 3) dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            else dateObj = new Date(rawDate);
+        } else if (typeof rawDate === 'number') {
+            dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+        }
+
+        return {
+            data: dateObj && !isNaN(dateObj.getTime()) ? dateObj : null,
+            tipo: row[1] ? String(row[1]).trim().toUpperCase() : '',
+            re: row[2] ? String(row[2]).trim() : '',
+            nome: row[3] ? String(row[3]).trim().toUpperCase() : '',
+            posto: row[4] ? String(row[4]).trim().toUpperCase() : '',
+            status: row[5] ? String(row[5]).trim().toUpperCase() : ''
+        };
+    }).filter(item => item !== null);
 }
