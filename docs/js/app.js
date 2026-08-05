@@ -1850,12 +1850,51 @@ function renderAbastecimentoDashboard() {
     const cardValor = document.getElementById('abast-card-valor');
     const cardVolume = document.getElementById('abast-card-volume');
     const cardCount = document.getElementById('abast-card-count');
+    const cardKml = document.getElementById('abast-card-kml');
     
     if (!tbody || !stateAbastecimento.filteredData) return;
 
     let totalValor = 0;
     let totalVolume = 0;
     const count = stateAbastecimento.filteredData.length;
+
+    // Cálculo de Km/L por Viatura
+    let veiculos = {};
+    stateAbastecimento.filteredData.forEach(item => {
+        if (!item.prefixo) return;
+        if (!veiculos[item.prefixo]) veiculos[item.prefixo] = [];
+        veiculos[item.prefixo].push(item);
+    });
+
+    let totalValidDistance = 0;
+    let totalValidVolume = 0;
+
+    for (let prefixo in veiculos) {
+        let registros = veiculos[prefixo];
+        // Ordena por Km para garantir a cronologia correta
+        registros.sort((a, b) => a.km - b.km);
+        
+        if (registros.length > 1) {
+            let kmInicial = registros[0].km;
+            let kmFinal = registros[registros.length - 1].km;
+            
+            // Soma o volume de TODOS, exceto do primeiro (índice 0)
+            let volumeUsado = 0;
+            for (let i = 1; i < registros.length; i++) {
+                volumeUsado += registros[i].volume;
+            }
+
+            if (kmFinal > kmInicial && volumeUsado > 0) {
+                totalValidDistance += (kmFinal - kmInicial);
+                totalValidVolume += volumeUsado;
+            }
+        }
+    }
+
+    let avgKml = '--';
+    if (totalValidVolume > 0 && totalValidDistance > 0) {
+        avgKml = (totalValidDistance / totalValidVolume).toFixed(2).replace('.', ',');
+    }
 
     let html = '';
     
@@ -1889,5 +1928,6 @@ function renderAbastecimentoDashboard() {
     
     if (cardCount) cardCount.textContent = count;
     if (cardValor) cardValor.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValor);
-    if (cardVolume) cardVolume.textContent = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalVolume) + ' L';
+    if (cardVolume) cardVolume.textContent = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalVolume) + ' L';
+    if (cardKml) cardKml.textContent = avgKml;
 }

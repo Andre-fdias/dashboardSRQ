@@ -31,7 +31,7 @@
     </div>
 
     <!-- Mini Cards Dashboard -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
         <!-- Gasto Total -->
         <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
             <div class="absolute -right-6 -top-6 text-red-500/10 group-hover:text-red-500/20 transition-colors duration-500">
@@ -54,6 +54,20 @@
                 <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Volume Consumido</p>
                 <div class="flex items-end gap-2">
                     <span class="text-3xl font-black text-white" id="abast-card-volume">0 L</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consumo Médio (Km/L) -->
+        <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-6 -top-6 text-purple-500/10 group-hover:text-purple-500/20 transition-colors duration-500">
+                <i class="fa-solid fa-gauge-high text-8xl transform -rotate-12"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-widest mb-1">Consumo Médio</p>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-black text-white" id="abast-card-kml">--</span>
+                    <span class="text-xs font-bold text-gray-400 mb-1.5">km/l</span>
                 </div>
             </div>
         </div>
