@@ -176,7 +176,7 @@ export const stateDejem = {
     filteredData: [],
     filters: {
         nome: '',
-        dateStart: '',
+        dateStart: getPastDateStr(0),
         dateEnd: '',
         eb: 'TODOS',
         id: ''
