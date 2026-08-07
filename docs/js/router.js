@@ -11,10 +11,7 @@ const routes = {
     'timeline': 'pages/timeline.html',
     'sobre': 'pages/sobre.html',
     'dejem': 'pages/dejem.html',
-    'abastecimento': 'pages/abastecimento.html',
-    'ferias': 'pages/ferias.html',
-    'efetivo': 'pages/efetivo.html',
-    'frequencia': 'pages/frequencia.html'
+    'abastecimento': 'pages/abastecimento.html'
 };
 
 const dashboardRoutes = ['home', 'ocorrencias', 'viaturas', 'prontidoes', 'naturezas', 'municipios', 'mapa', 'timeline'];
