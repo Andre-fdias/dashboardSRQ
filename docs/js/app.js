@@ -2543,26 +2543,24 @@ function updateQtaTab() {
     if (chartQtaNat && chartData.length > 0) {
         chartQtaNat.setOption({
             backgroundColor: 'transparent',
-            tooltip: { trigger: 'item', backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
             legend: { show: false },
+            grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+            xAxis: { type: 'value', show: false },
+            yAxis: { 
+                type: 'category', 
+                data: chartData.map(d => d.name).reverse(),
+                axisLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { color: '#b0c0d8', width: 120, overflow: 'truncate' }
+            },
             series: [{
                 name: 'Natureza',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                avoidLabelOverlap: true,
-                itemStyle: {
-                    borderRadius: 5,
-                    borderColor: '#0a0e17',
-                    borderWidth: 2
-                },
-                label: {
-                    show: true,
-                    formatter: '{b}\\n{c} ({d}%)',
-                    color: '#b0c0d8'
-                },
-                data: chartData
-            }],
-            color: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#6366f1', '#ec4899', '#14b8a6']
+                type: 'bar',
+                data: chartData.map(d => d.value).reverse(),
+                label: { show: true, position: 'right', color: '#fff' },
+                itemStyle: { borderRadius: [0, 4, 4, 0], color: '#ef4444' }
+            }]
         });
     } else if (chartQtaNat) {
         chartQtaNat.clear();
