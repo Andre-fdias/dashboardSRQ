@@ -62,6 +62,8 @@ document.addEventListener('page-loaded', (e) => {
         setTimeout(() => { initDejemTab(); }, 100);
     } else if (route === 'abastecimento') {
         setTimeout(() => { initAbastecimentoTab(); }, 100);
+    } else if (route === 'qta') {
+        setTimeout(() => { initQtaTab(); }, 100);
     }
 });
 
@@ -99,6 +101,12 @@ window.addEventListener('dataUpdated', () => {
         updateFullMapData(state.filteredData);
     } else if (currentRoute === 'timeline') {
         updateTimelineTab();
+    } else if (currentRoute === 'dejem') {
+        updateDejemTab();
+    } else if (currentRoute === 'abastecimento') {
+        updateAbastecimentoTab();
+    } else if (currentRoute === 'qta') {
+        updateQtaTab();
     }
 });
 
@@ -2442,4 +2450,139 @@ window.showMissingGeocodes = function() {
     `;
     
     document.body.insertAdjacentHTML('beforeend', html);
+};
+
+// ==========================================
+// QTA TAB (Ocorrências Canceladas)
+// ==========================================
+
+let qtaDataTable = null;
+let chartQtaNat = null;
+
+function initQtaTab() {
+    if (!document.getElementById('kpi-qta-total')) return;
+
+    if (chartQtaNat) {
+        chartQtaNat.dispose();
+        chartQtaNat = null;
+    }
+
+    const chartDom = document.getElementById('chart-qta-nat');
+    if (chartDom) {
+        chartQtaNat = echarts.init(chartDom);
+    }
+
+    if (!qtaDataTable && document.getElementById('table-qta-detalhe')) {
+        qtaDataTable = $('#table-qta-detalhe').DataTable({
+            data: [],
+            columns: [
+                { data: 'talao', title: 'Talão' },
+                { data: 'dataHora', title: 'Data/Hora', render: function(data, type, row) {
+                    if (type === 'sort' || type === 'type') {
+                        return row._dataTimestamp;
+                    }
+                    return data;
+                }},
+                { data: 'viatura', title: 'Viatura' },
+                { data: 'natureza', title: 'Natureza' },
+                { data: 'motivo', title: 'Motivo / Observação' }
+            ],
+            language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
+            pageLength: 10,
+            order: [[1, 'desc']], // Sort by date desc
+            dom: '<"flex justify-between items-center mb-4"f>t<"flex justify-between items-center mt-4"p>',
+            createdRow: function (row, data, dataIndex) {
+                $(row).addClass('border-b border-white/5 hover:bg-white/5 transition text-sm text-gray-300');
+                $('td', row).eq(0).addClass('font-mono font-bold text-[#5a6f8a]');
+                $('td', row).eq(4).addClass('text-red-400/80');
+            }
+        });
+    }
+
+    updateQtaTab();
+};
+
+function updateQtaTab() {
+    if (!document.getElementById('kpi-qta-total')) return;
+
+    const qtaData = state.filteredData.filter(d => d.resultado === 'QTA');
+
+    document.getElementById('kpi-qta-total').textContent = qtaData.length;
+
+    const vtrCounts = {};
+    const natCounts = {};
+
+    qtaData.forEach(d => {
+        if (d.viatura) {
+            vtrCounts[d.viatura] = (vtrCounts[d.viatura] || 0) + 1;
+        }
+        if (d.natureza) {
+            natCounts[d.natureza] = (natCounts[d.natureza] || 0) + 1;
+        }
+    });
+
+    let topVtr = '--';
+    let maxVtr = 0;
+    for (const [vtr, count] of Object.entries(vtrCounts)) {
+        if (count > maxVtr) { maxVtr = count; topVtr = vtr; }
+    }
+    document.getElementById('kpi-qta-vtr').textContent = topVtr !== '--' ? `${topVtr} (${maxVtr})` : '--';
+
+    let topNat = '--';
+    let maxNat = 0;
+    for (const [nat, count] of Object.entries(natCounts)) {
+        if (count > maxNat) { maxNat = count; topNat = nat; }
+    }
+    document.getElementById('kpi-qta-nat').textContent = topNat !== '--' ? `${topNat} (${maxNat})` : '--';
+
+    const chartData = Object.entries(natCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+    if (chartQtaNat && chartData.length > 0) {
+        chartQtaNat.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'item', backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
+            legend: { show: false },
+            series: [{
+                name: 'Natureza',
+                type: 'pie',
+                radius: ['40%', '70%'],
+                avoidLabelOverlap: true,
+                itemStyle: {
+                    borderRadius: 5,
+                    borderColor: '#0a0e17',
+                    borderWidth: 2
+                },
+                label: {
+                    show: true,
+                    formatter: '{b}\\n{c} ({d}%)',
+                    color: '#b0c0d8'
+                },
+                data: chartData
+            }],
+            color: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#6366f1', '#ec4899', '#14b8a6']
+        });
+    } else if (chartQtaNat) {
+        chartQtaNat.clear();
+    }
+
+    if (qtaDataTable) {
+        const tableRows = qtaData.map(d => {
+            const dateStr = d.data instanceof Date && !isNaN(d.data) ? d.data.toLocaleDateString('pt-BR') : '';
+            return {
+                talao: d.talao || 'N/I',
+                dataHora: `${dateStr} ${d.qtrSaida || ''}`.trim(),
+                _dataTimestamp: d.data ? d.data.getTime() : 0,
+                viatura: d.viatura || 'N/I',
+                natureza: d.natureza || 'N/I',
+                motivo: d.observacoes || 'N/I'
+            };
+        });
+        
+        qtaDataTable.clear();
+        qtaDataTable.rows.add(tableRows);
+        qtaDataTable.draw();
+    }
 };

@@ -9,12 +9,13 @@ const routes = {
     'municipios': 'pages/municipios.html',
     'mapa': 'pages/mapa.html',
     'timeline': 'pages/timeline.html',
+    'qta': 'pages/qta.html',
     'sobre': 'pages/sobre.html',
     'dejem': 'pages/dejem.html',
     'abastecimento': 'pages/abastecimento.html'
 };
 
-const dashboardRoutes = ['home', 'ocorrencias', 'viaturas', 'prontidoes', 'naturezas', 'municipios', 'mapa', 'timeline'];
+const dashboardRoutes = ['home', 'ocorrencias', 'viaturas', 'prontidoes', 'naturezas', 'municipios', 'mapa', 'timeline', 'qta'];
 
 const appContent = document.getElementById('app-content');
 const loader = document.getElementById('loader-overlay');
