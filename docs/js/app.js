@@ -2485,16 +2485,16 @@ function initQtaTab() {
         qtaDataTable = $('#table-qta-detalhe').DataTable({
             data: [],
             columns: [
-                { data: 'talao', title: 'Talão' },
-                { data: 'dataHora', title: 'Data/Hora', render: function(data, type, row) {
+                { data: 'talao' },
+                { data: 'dataHora', render: function(data, type, row) {
                     if (type === 'sort' || type === 'type') {
                         return row._dataTimestamp;
                     }
                     return data;
                 }},
-                { data: 'viatura', title: 'Viatura' },
-                { data: 'natureza', title: 'Natureza' },
-                { data: 'motivo', title: 'Motivo / Observação' }
+                { data: 'viatura' },
+                { data: 'natureza' },
+                { data: 'motivo' }
             ],
             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
             pageLength: 10,
@@ -2502,6 +2502,7 @@ function initQtaTab() {
             dom: '<"flex justify-between items-center mb-4"f>t<"flex justify-between items-center mt-4"p>',
             createdRow: function (row, data, dataIndex) {
                 $(row).addClass('border-b border-white/5 hover:bg-white/5 transition text-sm text-gray-300');
+                $('td', row).addClass('p-3');
                 $('td', row).eq(0).addClass('font-mono font-bold text-[#5a6f8a]');
                 $('td', row).eq(4).addClass('text-red-400/80');
             }
@@ -2558,7 +2559,7 @@ function updateQtaTab() {
             backgroundColor: 'transparent',
             tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
             legend: { show: false },
-            grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+            grid: { left: '3%', right: '15%', bottom: '3%', top: '3%', containLabel: true },
             xAxis: { type: 'value', show: false },
             yAxis: { 
                 type: 'category', 
@@ -2589,7 +2590,7 @@ function updateQtaTab() {
             backgroundColor: 'transparent',
             tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
             legend: { show: false },
-            grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+            grid: { left: '3%', right: '15%', bottom: '3%', top: '3%', containLabel: true },
             xAxis: { type: 'value', show: false },
             yAxis: { 
                 type: 'category', 
