@@ -2458,6 +2458,7 @@ window.showMissingGeocodes = function() {
 
 let qtaDataTable = null;
 let chartQtaNat = null;
+let chartQtaCidade = null;
 
 function initQtaTab() {
     if (!document.getElementById('kpi-qta-total')) return;
@@ -2466,10 +2467,18 @@ function initQtaTab() {
         chartQtaNat.dispose();
         chartQtaNat = null;
     }
+    if (chartQtaCidade) {
+        chartQtaCidade.dispose();
+        chartQtaCidade = null;
+    }
 
-    const chartDom = document.getElementById('chart-qta-nat');
-    if (chartDom) {
-        chartQtaNat = echarts.init(chartDom);
+    const chartDomNat = document.getElementById('chart-qta-nat');
+    if (chartDomNat) {
+        chartQtaNat = echarts.init(chartDomNat);
+    }
+    const chartDomCidade = document.getElementById('chart-qta-cidade');
+    if (chartDomCidade) {
+        chartQtaCidade = echarts.init(chartDomCidade);
     }
 
     if (!qtaDataTable && document.getElementById('table-qta-detalhe')) {
@@ -2511,6 +2520,7 @@ function updateQtaTab() {
 
     const vtrCounts = {};
     const natCounts = {};
+    const cidadeCounts = {};
 
     qtaData.forEach(d => {
         if (d.viatura) {
@@ -2518,6 +2528,9 @@ function updateQtaTab() {
         }
         if (d.natureza) {
             natCounts[d.natureza] = (natCounts[d.natureza] || 0) + 1;
+        }
+        if (d.cidade) {
+            cidadeCounts[d.cidade] = (cidadeCounts[d.cidade] || 0) + 1;
         }
     });
 
@@ -2564,6 +2577,37 @@ function updateQtaTab() {
         });
     } else if (chartQtaNat) {
         chartQtaNat.clear();
+    }
+
+    const chartCidadeData = Object.entries(cidadeCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+    if (chartQtaCidade && chartCidadeData.length > 0) {
+        chartQtaCidade.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
+            legend: { show: false },
+            grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+            xAxis: { type: 'value', show: false },
+            yAxis: { 
+                type: 'category', 
+                data: chartCidadeData.map(d => d.name).reverse(),
+                axisLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { color: '#b0c0d8', width: 100, overflow: 'truncate' }
+            },
+            series: [{
+                name: 'Cidade',
+                type: 'bar',
+                data: chartCidadeData.map(d => d.value).reverse(),
+                label: { show: true, position: 'right', color: '#fff' },
+                itemStyle: { borderRadius: [0, 4, 4, 0], color: '#3b82f6' }
+            }]
+        });
+    } else if (chartQtaCidade) {
+        chartQtaCidade.clear();
     }
 
     if (qtaDataTable) {

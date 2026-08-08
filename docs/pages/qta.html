@@ -52,7 +52,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Gráfico Motivos / Naturezas -->
         <div class="glass-panel p-5 flex flex-col min-h-[400px]">
             <h3 class="text-sm font-bold text-[#b0c0d8] uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -61,16 +61,24 @@
             <div id="chart-qta-nat" class="flex-1 w-full h-[350px]"></div>
         </div>
 
-        <!-- Tabela Detalhada -->
-        <div class="glass-panel p-5 lg:col-span-2 flex flex-col min-h-[400px]">
+        <!-- Gráfico Cidades -->
+        <div class="glass-panel p-5 flex flex-col min-h-[400px]">
             <h3 class="text-sm font-bold text-[#b0c0d8] uppercase tracking-wider mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-table-list text-[#5a6f8a]"></i> Detalhamento de Cancelamentos
+                <i class="fa-solid fa-city text-[#5a6f8a]"></i> QTA por Cidade
             </h3>
-            <div class="flex-1 w-full relative overflow-x-auto pb-4">
-                <table id="table-qta-detalhe" class="w-full text-left custom-datatable stripe hover whitespace-nowrap">
-                    <!-- DataTable via JS -->
-                </table>
-            </div>
+            <div id="chart-qta-cidade" class="flex-1 w-full h-[350px]"></div>
+        </div>
+    </div>
+
+    <!-- Tabela Detalhada -->
+    <div class="glass-panel p-5 mb-6 flex flex-col min-h-[400px]">
+        <h3 class="text-sm font-bold text-[#b0c0d8] uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-table-list text-[#5a6f8a]"></i> Detalhamento de Cancelamentos
+        </h3>
+        <div class="flex-1 w-full relative overflow-x-auto pb-4">
+            <table id="table-qta-detalhe" class="w-full text-left custom-datatable stripe hover whitespace-nowrap">
+                <!-- DataTable via JS -->
+            </table>
         </div>
     </div>
 </div>
