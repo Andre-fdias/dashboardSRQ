@@ -1194,6 +1194,7 @@ async function updateFullMapData(data) {
     globalMappedPoints = 0;
 
     const itemsToGeocode = [];
+    globalMissingItems = [];
 
     for (const item of dataToProcess) {
         if (signal.aborted) return;
@@ -1215,8 +1216,8 @@ async function updateFullMapData(data) {
             coords = geocache[query];
 
             if (!coords) {
-                // Adiciona à fila de background para não travar a UI
                 itemsToGeocode.push({ item, query });
+                globalMissingItems.push({ item, query, status: '⏳ Buscando em 2º plano...' });
                 continue; 
             }
         }
@@ -2312,6 +2313,9 @@ async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, 
                 
                 heatPoints.push(coords);
                 globalMappedPoints++;
+                
+                globalMissingItems = globalMissingItems.filter(m => m.item !== item);
+                
                 updateMapStatsUI();
                 
                 // Add popup
@@ -2353,9 +2357,16 @@ async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, 
                 if (fullHeatLayer) {
                     fullHeatLayer.setLatLngs(heatPoints);
                 }
+            } else {
+                const missing = globalMissingItems.find(m => m.item === item);
+                if (missing) missing.status = '❌ Não Encontrado (Sem Rua/Nº)';
+                updateMapStatsUI();
             }
         } catch (err) {
             if (err.name !== 'AbortError') console.warn("Geocoding background err:", err);
+            const missing = globalMissingItems.find(m => m.item === item);
+            if (missing) missing.status = '❌ Erro de Conexão';
+            updateMapStatsUI();
         }
 
         processed++;
@@ -2369,6 +2380,7 @@ async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, 
 
 let globalTotalMapPoints = 0;
 let globalMappedPoints = 0;
+let globalMissingItems = [];
 
 function updateMapStatsUI() {
     const domStats = document.getElementById('map-render-stats');
@@ -2385,3 +2397,49 @@ function updateMapStatsUI() {
         domMissing.textContent = missing;
     }
 }
+
+window.showMissingGeocodes = function() {
+    if (globalMissingItems.length === 0) {
+        alert("Todos os endereços foram renderizados com sucesso no mapa!");
+        return;
+    }
+    
+    const existing = document.getElementById('modal-missing-geo');
+    if (existing) existing.remove();
+    
+    let html = `
+        <div class="fixed inset-0 z-[9999] bg-[#0a0e17]/80 backdrop-blur-sm flex items-center justify-center p-4" id="modal-missing-geo">
+            <div class="bg-[#0a0e17] border border-white/10 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl relative">
+                <button onclick="document.getElementById('modal-missing-geo').remove()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+                
+                <h2 class="text-lg font-bold text-red-400 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Relatório de Falhas de Localização (${globalMissingItems.length})</h2>
+                <p class="text-xs text-gray-400 mb-4">Estes endereços não puderam ser plotados no mapa. Eles requerem correção de grafia ou inclusão manual de coordenadas na planilha.</p>
+                
+                <div class="overflow-y-auto flex-1 rounded-xl border border-white/5 bg-white/5 p-0">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-[#0a0e17] text-gray-400 sticky top-0 border-b border-white/10 shadow-md">
+                            <tr>
+                                <th class="p-3 font-semibold">Talão</th>
+                                <th class="p-3 font-semibold">Natureza</th>
+                                <th class="p-3 font-semibold">Endereço (Buscado)</th>
+                                <th class="p-3 font-semibold w-32">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${globalMissingItems.map(m => `
+                                <tr class="border-b border-white/5 hover:bg-white/10 transition">
+                                    <td class="p-3 text-[#5a6f8a] font-mono font-bold">${m.item.talao || 'N/I'}</td>
+                                    <td class="p-3 text-gray-300">${m.item.natureza || 'N/I'}</td>
+                                    <td class="p-3 text-gray-400 truncate max-w-[200px]" title="${m.query}">${m.query}</td>
+                                    <td class="p-3 ${m.status.includes('❌') ? 'text-red-400' : 'text-yellow-400'} font-bold">${m.status}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', html);
+};
