@@ -24,6 +24,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     
+    <!-- Leaflet Geoman & Measure CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.2/dist/leaflet-geoman.css" />
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/main.css">
 </head>
@@ -173,6 +176,18 @@
                         </select>
                     </div>
                     <div class="filter-group">
+                        <label><i class="fa-solid fa-fire mr-1"></i> Natureza</label>
+                        <select id="filter-natureza">
+                            <option value="TODOS">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fa-solid fa-city mr-1"></i> Cidade</label>
+                        <select id="filter-cidade">
+                            <option value="TODOS">Todas</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
                         <label><i class="fa-solid fa-truck mr-1"></i> Viatura</label>
                         <select id="filter-viatura">
                             <option value="TODOS">Todos</option>
@@ -212,6 +227,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    
+    <!-- Leaflet Geoman JS -->
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.2/dist/leaflet-geoman.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
     <!-- Script de Roteamento -->
     <script type="module" src="js/router.js"></script>

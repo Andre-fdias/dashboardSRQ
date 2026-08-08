@@ -19,7 +19,9 @@ export const state = {
         dateStart: getPastDateStr(30),
         dateEnd: getPastDateStr(0),
         prontidao: 'TODOS',
-        viatura: 'TODOS'
+        viatura: 'TODOS',
+        natureza: 'TODOS',
+        cidade: 'TODOS'
     },
     lastUpdate: null,
     isLoaded: false
@@ -94,8 +96,55 @@ export function setFilter(key, value) {
     }
 }
 
-export function getUniqueValues(field) {
-    const values = state.rawData.map(item => item[field]).filter(val => val && val.toString().trim() !== '');
+export function getUniqueValues(field, customFilters = null) {
+    const filtersToUse = customFilters || state.filters;
+    
+    // Efeito Cascata Inteligente: Filtramos rawData com todos os filtros ATUAIS,
+    // EXCETO o próprio campo que estamos construindo as opções.
+    const cascadedData = state.rawData.filter(item => {
+        let match = true;
+        
+        if (filtersToUse.talao && !item.talao.includes(filtersToUse.talao)) match = false;
+
+        if (filtersToUse.dateStart) {
+            const start = new Date(filtersToUse.dateStart + 'T00:00:00');
+            if (item.data < start) match = false;
+        }
+        if (filtersToUse.dateEnd) {
+            const end = new Date(filtersToUse.dateEnd + 'T23:59:59');
+            if (item.data > end) match = false;
+        }
+
+        if (field !== 'prontidao') {
+            const prontidaoFilter = filtersToUse.prontidao || 'TODOS';
+            if (prontidaoFilter !== 'TODOS' && item.prontidao !== prontidaoFilter) match = false;
+        }
+        
+        if (field !== 'viatura') {
+            const viaturaFilter = filtersToUse.viatura || 'TODOS';
+            if (viaturaFilter !== 'TODOS' && item.viatura !== viaturaFilter) match = false;
+        }
+
+        if (field !== 'natureza') {
+            const naturezaFilter = filtersToUse.natureza || 'TODOS';
+            if (naturezaFilter !== 'TODOS' && item.natureza !== naturezaFilter) match = false;
+        }
+
+        if (field !== 'cidade') {
+            const cidadeFilter = filtersToUse.cidade || 'TODOS';
+            if (cidadeFilter !== 'TODOS' && item.cidade !== cidadeFilter) match = false;
+        }
+
+        return match;
+    });
+
+    const values = cascadedData.map(item => item[field]).filter(val => val && val.toString().trim() !== '');
+    
+    // O valor atual do filtro deve continuar caso venha de um estado salvo que seja restrito
+    if (filtersToUse[field] && filtersToUse[field] !== 'TODOS') {
+        values.push(filtersToUse[field]);
+    }
+    
     return [...new Set(values)].sort();
 }
 
@@ -126,6 +175,16 @@ export function applyFilters() {
         
         const viaturaFilter = state.filters.viatura || 'TODOS';
         if (viaturaFilter !== 'TODOS' && item.viatura !== viaturaFilter) {
+            match = false;
+        }
+
+        const naturezaFilter = state.filters.natureza || 'TODOS';
+        if (naturezaFilter !== 'TODOS' && item.natureza !== naturezaFilter) {
+            match = false;
+        }
+
+        const cidadeFilter = state.filters.cidade || 'TODOS';
+        if (cidadeFilter !== 'TODOS' && item.cidade !== cidadeFilter) {
             match = false;
         }
         

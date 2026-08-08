@@ -6,7 +6,7 @@
 
 import { initTheme } from './layout/theme.js';
 import { initSidebar } from './layout/sidebar.js';
-import { initDataStore, getUniqueValues, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues, stateAbastecimento, initAbastecimentoStore, setAbastecimentoFilter, applyAbastecimentoFilters, getUniqueAbastecimentoValues } from './store/dataStore.js';
+import { initDataStore, getUniqueValues, setFilter, applyFilters, state, stateDejem, initDejemStore, setDejemFilter, applyDejemFilters, getUniqueDejemValues, stateAbastecimento, initAbastecimentoStore, setAbastecimentoFilter, applyAbastecimentoFilters, getUniqueAbastecimentoValues, forceRefresh } from './store/dataStore.js';
 
 import { initRouter } from './router.js';
 
@@ -52,7 +52,10 @@ document.addEventListener('page-loaded', (e) => {
     } else if (route === 'prontidoes') {
         setTimeout(() => { initProntidoesTab(); }, 100);
     } else if (route === 'mapa') {
-        initFullMap();
+        setTimeout(() => { 
+            initFullMap(); 
+            if (fullMap) fullMap.invalidateSize();
+        }, 150);
     } else if (route === 'timeline') {
         setTimeout(() => { initTimelineTab(); }, 100);
     } else if (route === 'dejem') {
@@ -65,11 +68,19 @@ document.addEventListener('page-loaded', (e) => {
 let dataTable = null;
 let fullMap = null;
 let fullHeatLayer = null;
+let clusterIncendios = null;
+let clusterResgates = null;
+let clusterOutros = null;
+let bufferLayerGroup = null;
+let layerControlObj = null;
 let mapMarkerCluster = null;
 let currentMapMode = 'markers';
 let currentMapStyle = 'dark';
 let activeTileLayer = null;
 let geocodingAbortController = null;
+let globalValidPoints = []; // Coordenadas em tela para análise do Turf
+let timeSliderControl = null;
+let allMapMarkers = []; // { marker, cat, hour }
 
 window.addEventListener('dataUpdated', () => {
     populateSelects(); // Atualiza o select de viaturas (filtro global)
@@ -136,44 +147,75 @@ function initFlatpickr() {
             altInput: true,
             altFormat: "d/m/Y",
             locale: "pt",
-            theme: "dark"
+            theme: "dark",
+            onChange: function(selectedDates, dateStr, instance) {
+                if (instance.element) {
+                    instance.element.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
         });
     }
 }
 
-function populateSelects() {
+function populateSelects(customFilters = null) {
+    const filtersToUse = customFilters || state.filters;
+
     const prontidaoSelect = document.getElementById('filter-prontidao');
     const viaturaSelect = document.getElementById('filter-viatura');
+    const naturezaSelect = document.getElementById('filter-natureza');
+    const cidadeSelect = document.getElementById('filter-cidade');
+    const talaoInput = document.getElementById('filter-id');
+    const startInput = document.getElementById('filter-date-start');
+    const endInput = document.getElementById('filter-date-end');
     
-    if (prontidaoSelect && state.filters.prontidao) {
-        prontidaoSelect.value = state.filters.prontidao;
+    // Apenas se NÃO for cascata visual (carregar filtros iniciais da store)
+    if (!customFilters) {
+        if (prontidaoSelect && state.filters.prontidao) prontidaoSelect.value = state.filters.prontidao;
+        if (talaoInput && state.filters.talao) talaoInput.value = state.filters.talao;
+        if (startInput && state.filters.dateStart) {
+            startInput.value = state.filters.dateStart;
+            if (startInput._flatpickr) startInput._flatpickr.setDate(state.filters.dateStart);
+        }
+        if (endInput && state.filters.dateEnd) {
+            endInput.value = state.filters.dateEnd;
+            if (endInput._flatpickr) endInput._flatpickr.setDate(state.filters.dateEnd);
+        }
     }
 
     if (viaturaSelect) {
-        const viaturas = getUniqueValues('viatura');
+        const viaturas = getUniqueValues('viatura', filtersToUse);
         viaturaSelect.innerHTML = '<option value="TODOS">TODOS</option>';
         viaturas.forEach(v => {
             const opt = document.createElement('option');
             opt.value = v;
             opt.textContent = v;
-            if (state.filters.viatura === v) opt.selected = true;
+            if (filtersToUse.viatura === v) opt.selected = true;
             viaturaSelect.appendChild(opt);
         });
     }
 
-    const talaoInput = document.getElementById('filter-id');
-    if (talaoInput && state.filters.talao) talaoInput.value = state.filters.talao;
-
-    const startInput = document.getElementById('filter-date-start');
-    if (startInput && state.filters.dateStart) {
-        startInput.value = state.filters.dateStart;
-        if (startInput._flatpickr) startInput._flatpickr.setDate(state.filters.dateStart);
+    if (naturezaSelect) {
+        const naturezas = getUniqueValues('natureza', filtersToUse);
+        naturezaSelect.innerHTML = '<option value="TODOS">TODOS</option>';
+        naturezas.forEach(n => {
+            const opt = document.createElement('option');
+            opt.value = n;
+            opt.textContent = n;
+            if (filtersToUse.natureza === n) opt.selected = true;
+            naturezaSelect.appendChild(opt);
+        });
     }
 
-    const endInput = document.getElementById('filter-date-end');
-    if (endInput && state.filters.dateEnd) {
-        endInput.value = state.filters.dateEnd;
-        if (endInput._flatpickr) endInput._flatpickr.setDate(state.filters.dateEnd);
+    if (cidadeSelect) {
+        const cidades = getUniqueValues('cidade', filtersToUse);
+        cidadeSelect.innerHTML = '<option value="TODOS">TODAS</option>';
+        cidades.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            if (filtersToUse.cidade === c) opt.selected = true;
+            cidadeSelect.appendChild(opt);
+        });
     }
 }
 
@@ -182,6 +224,24 @@ function bindFilterEvents() {
     const btnClear = document.getElementById('btn-clear');
     const btnRefresh = document.getElementById('btn-refresh');
 
+    const triggerCascade = () => {
+        const currentDOMFilters = {
+            talao: document.getElementById('filter-id') ? document.getElementById('filter-id').value.trim() : '',
+            dateStart: document.getElementById('filter-date-start') ? document.getElementById('filter-date-start').value : '',
+            dateEnd: document.getElementById('filter-date-end') ? document.getElementById('filter-date-end').value : '',
+            prontidao: document.getElementById('filter-prontidao') ? document.getElementById('filter-prontidao').value : 'TODOS',
+            viatura: document.getElementById('filter-viatura') ? document.getElementById('filter-viatura').value : 'TODOS',
+            natureza: document.getElementById('filter-natureza') ? document.getElementById('filter-natureza').value : 'TODOS',
+            cidade: document.getElementById('filter-cidade') ? document.getElementById('filter-cidade').value : 'TODOS'
+        };
+        populateSelects(currentDOMFilters);
+    };
+
+    ['filter-date-start', 'filter-date-end', 'filter-prontidao', 'filter-viatura', 'filter-natureza', 'filter-cidade'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', triggerCascade);
+    });
+
     if (btnSearch) {
         btnSearch.addEventListener('click', () => {
             setFilter('talao', document.getElementById('filter-id').value.trim());
@@ -189,6 +249,8 @@ function bindFilterEvents() {
             setFilter('dateEnd', document.getElementById('filter-date-end').value);
             setFilter('prontidao', document.getElementById('filter-prontidao').value);
             setFilter('viatura', document.getElementById('filter-viatura').value);
+            setFilter('natureza', document.getElementById('filter-natureza').value);
+            setFilter('cidade', document.getElementById('filter-cidade').value);
             applyFilters();
         });
     }
@@ -210,21 +272,57 @@ function bindFilterEvents() {
 
             document.getElementById('filter-prontidao').value = 'TODOS';
             document.getElementById('filter-viatura').value = 'TODOS';
+            document.getElementById('filter-natureza').value = 'TODOS';
+            document.getElementById('filter-cidade').value = 'TODOS';
 
             setFilter('talao', '');
             setFilter('dateStart', dateStartStr);
             setFilter('dateEnd', dateEndStr);
             setFilter('prontidao', 'TODOS');
             setFilter('viatura', 'TODOS');
+            setFilter('natureza', 'TODOS');
+            setFilter('cidade', 'TODOS');
             applyFilters();
         });
     }
 
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
-            forceRefresh();
+            initDataStore(true);
         });
     }
+}
+
+// Filtro Dinâmico da Linha do Tempo (Time Slider)
+function filterMapByTime(hourLimit) {
+    if (clusterIncendios) clusterIncendios.clearLayers();
+    if (clusterResgates) clusterResgates.clearLayers();
+    if (clusterOutros) clusterOutros.clearLayers();
+    
+    const heatPoints = [];
+    globalValidPoints = [];
+    let validCount = 0;
+    
+    allMapMarkers.forEach(item => {
+        if (hourLimit === 24 || (item.hour >= hourLimit - 3 && item.hour <= hourLimit)) {
+            if (item.cat === 'incendio' && clusterIncendios) clusterIncendios.addLayer(item.marker);
+            else if (item.cat === 'resgate' && clusterResgates) clusterResgates.addLayer(item.marker);
+            else if (clusterOutros) clusterOutros.addLayer(item.marker);
+            
+            const pt = item.marker.getLatLng();
+            const coord = [pt.lat, pt.lng];
+            heatPoints.push(coord);
+            globalValidPoints.push(coord);
+            validCount++;
+        }
+    });
+
+    if (fullHeatLayer) {
+        fullHeatLayer.setLatLngs(heatPoints);
+    }
+    
+    const kpiTotal = document.getElementById('kpi-map-total');
+    if (kpiTotal) kpiTotal.textContent = validCount;
 }
 
 function initCharts() {
@@ -381,12 +479,16 @@ function updateHomeMapData(data) {
     const geocache = JSON.parse(localStorage.getItem('dashboard_geocache') || '{}');
 
     data.forEach(item => {
-        let query = `${item.endereco || ''}, ${item.cidade}, SP, Brasil`.trim();
-        if (query.startsWith(',')) query = `${item.cidade}, SP, Brasil`;
-        
-        const coords = geocache[query];
-        if (coords) {
-            heatPoints.push(coords);
+        if (item.latitude !== null && !isNaN(item.latitude) && item.longitude !== null && !isNaN(item.longitude)) {
+            heatPoints.push([item.latitude, item.longitude]);
+        } else {
+            let query = `${item.endereco || ''}, ${item.cidade}, SP, Brasil`.trim();
+            if (query.startsWith(',')) query = `${item.cidade}, SP, Brasil`;
+            
+            const coords = geocache[query];
+            if (coords) {
+                heatPoints.push(coords);
+            }
         }
     });
 
@@ -828,16 +930,165 @@ function initFullMap() {
 
     fullMap = L.map('full-map', { zoomControl: true }).setView([-23.528, -47.135], 11);
     
-    setMapTileLayer(currentMapStyle);
+    // Configurar as ferramentas do Leaflet-Geoman (Desenho, Área e Distância)
+    if (fullMap.pm) {
+        fullMap.pm.addControls({
+            position: 'topleft',
+            drawMarker: true,
+            drawPolygon: true,
+            drawPolyline: true,
+            drawCircle: true,
+            drawRectangle: true,
+            editMode: true,
+            dragMode: true,
+            cutPolygon: false,
+            removalMode: true,
+        });
+        
+        // Habilitar tooltips que mostram medidas (distância/área) nativamente no Geoman
+        fullMap.pm.setGlobalOptions({ 
+            measurements: { measurement: true, displayFormat: 'metric' },
+            tooltips: true
+        });
 
-    if (mapMarkerCluster) {
-        mapMarkerCluster.clearLayers();
+        // Adiciona cálculos manuais e Tooltips visuais via Turf.js 
+        fullMap.on('pm:create', function(e) {
+            const layer = e.layer;
+            const shape = e.shape;
+            
+            function updateMeasure() {
+                if (!window.turf) return;
+                let measureText = '';
+                let geojson = layer.toGeoJSON ? layer.toGeoJSON() : null;
+                
+                if (shape === 'Polygon' || shape === 'Rectangle' || shape === 'Circle') {
+                    let area = 0;
+                    if (shape === 'Circle') {
+                        area = Math.PI * Math.pow(layer.getRadius(), 2);
+                    } else if (geojson) {
+                        area = turf.area(geojson);
+                    }
+                    
+                    if (area > 1000000) {
+                        measureText = 'Área: ' + (area / 1000000).toFixed(2) + ' km²';
+                    } else {
+                        measureText = 'Área: ' + area.toFixed(2) + ' m²';
+                    }
+
+                    // Análise de Proximidade (Contar Ocorrências dentro da forma)
+                    let countInside = 0;
+                    if (globalValidPoints && globalValidPoints.length > 0) {
+                        if (shape === 'Circle') {
+                            const center = layer.getLatLng();
+                            const radius = layer.getRadius();
+                            for (const pt of globalValidPoints) {
+                                // pt = [lat, lng]
+                                if (center.distanceTo(L.latLng(pt[0], pt[1])) <= radius) countInside++;
+                            }
+                        } else if (geojson && shape !== 'Line' && shape !== 'Polyline' && shape !== 'LineString') {
+                            const pointsFeature = turf.points(globalValidPoints.map(p => [p[1], p[0]])); // turf usa [lng, lat]
+                            const ptsWithin = turf.pointsWithinPolygon(pointsFeature, geojson);
+                            countInside = ptsWithin.features.length;
+                        }
+                    }
+                    if (countInside > 0) {
+                        measureText += `<br><span style="color:#ef4444; font-weight:bold;">${countInside} ocorrência(s) na área</span>`;
+                    }
+                } else if (shape === 'Line' || shape === 'Polyline' || shape === 'LineString') {
+                    if (geojson) {
+                        const length = turf.length(geojson, {units: 'kilometers'});
+                        if (length < 1) {
+                            measureText = 'Distância: ' + (length * 1000).toFixed(0) + ' m';
+                        } else {
+                            measureText = 'Distância: ' + length.toFixed(2) + ' km';
+                        }
+                    }
+                }
+
+                if (measureText) {
+                    layer.bindTooltip(measureText, { permanent: true, direction: 'center' }).openTooltip();
+                }
+            }
+
+            updateMeasure();
+
+            // Atualiza caso o usuário edite (mova os pontos)
+            layer.on('pm:edit', updateMeasure);
+        });
     }
     
-    mapMarkerCluster = L.markerClusterGroup({
-        disableClusteringAtZoom: 16,
-        maxClusterRadius: 50
-    });
+    setMapTileLayer(currentMapStyle);
+
+    if (clusterIncendios) clusterIncendios.clearLayers();
+    if (clusterResgates) clusterResgates.clearLayers();
+    if (clusterOutros) clusterOutros.clearLayers();
+    if (bufferLayerGroup) bufferLayerGroup.clearLayers();
+    
+    const clusterConfig = { disableClusteringAtZoom: 16, maxClusterRadius: 50 };
+    clusterIncendios = L.markerClusterGroup(clusterConfig);
+    clusterResgates = L.markerClusterGroup(clusterConfig);
+    clusterOutros = L.markerClusterGroup(clusterConfig);
+    bufferLayerGroup = L.layerGroup();
+    
+    // Configura o Quartel e isócronas (Raios de 3, 6, 12 km)
+    const quartelCoords = [-23.5435390, -47.1323313];
+    const quartelMarker = L.marker(quartelCoords, {
+        icon: L.divIcon({ html: '<i class="fa-solid fa-building-shield text-2xl text-red-600 drop-shadow-md"></i>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] })
+    }).bindPopup('<b>Quartel de São Roque</b>');
+    bufferLayerGroup.addLayer(quartelMarker);
+    
+    // Anéis
+    L.circle(quartelCoords, { radius: 3000, color: '#10b981', fillOpacity: 0.1, weight: 2, dashArray: '5, 5' }).bindPopup('Tempo de Resposta: ~5 min').addTo(bufferLayerGroup);
+    L.circle(quartelCoords, { radius: 6000, color: '#f59e0b', fillOpacity: 0.1, weight: 2, dashArray: '5, 5' }).bindPopup('Tempo de Resposta: ~10 min').addTo(bufferLayerGroup);
+    L.circle(quartelCoords, { radius: 12000, color: '#ef4444', fillOpacity: 0.1, weight: 2, dashArray: '5, 5' }).bindPopup('Tempo de Resposta: ~20 min').addTo(bufferLayerGroup);
+
+    // Layer Control
+    if (layerControlObj) {
+        fullMap.removeControl(layerControlObj);
+    }
+    
+    const baseMaps = {};
+    const overlayMaps = {
+        "<span class='text-red-500 font-bold'><i class='fa-solid fa-fire'></i> Incêndios</span>": clusterIncendios,
+        "<span class='text-yellow-500 font-bold'><i class='fa-solid fa-truck-medical'></i> Resgate/Acidentes</span>": clusterResgates,
+        "<span class='text-blue-500 font-bold'><i class='fa-solid fa-bars-staggered'></i> Outras Naturezas</span>": clusterOutros,
+        "<span class='text-green-500 font-bold'><i class='fa-solid fa-tower-observation'></i> Cobertura do Quartel</span>": bufferLayerGroup
+    };
+    
+    layerControlObj = L.control.layers(baseMaps, overlayMaps, { collapsed: true, position: 'bottomright' }).addTo(fullMap);
+
+    // Linha do Tempo Espacial (Time Slider)
+    if (timeSliderControl) fullMap.removeControl(timeSliderControl);
+    
+    timeSliderControl = L.control({ position: 'bottomleft' });
+    timeSliderControl.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'time-slider-container bg-[#090e18]/90 border border-white/10 p-3 rounded-xl shadow-xl backdrop-blur-md text-white flex flex-col gap-2 min-w-[280px] mb-6 ml-2');
+        div.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-xs uppercase tracking-wider text-gray-300"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Linha do Tempo</span>
+                <span id="time-slider-val" class="text-blue-400 font-mono font-bold text-sm">24:00</span>
+            </div>
+            <input type="range" id="time-slider-input" min="0" max="24" value="24" step="3" class="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            <div class="text-[10px] text-gray-500 flex justify-between font-bold">
+                <span>00:00</span><span>12:00</span><span>24:00</span>
+            </div>
+        `;
+        L.DomEvent.disableClickPropagation(div);
+        return div;
+    };
+    timeSliderControl.addTo(fullMap);
+    
+    setTimeout(() => {
+        const sliderInput = document.getElementById('time-slider-input');
+        const sliderVal = document.getElementById('time-slider-val');
+        if (sliderInput) {
+            sliderInput.addEventListener('input', (e) => {
+                const h = parseInt(e.target.value);
+                sliderVal.textContent = h === 24 ? '24:00' : h.toString().padStart(2, '0') + ':00';
+                filterMapByTime(h);
+            });
+        }
+    }, 100);
 
     if (charts.mapNat) {
         charts.mapNat.dispose();
@@ -895,9 +1146,13 @@ function toggleMapMode() {
     if (!fullMap) return;
     if (currentMapMode === 'markers') {
         if (fullHeatLayer) fullMap.removeLayer(fullHeatLayer);
-        fullMap.addLayer(mapMarkerCluster);
+        fullMap.addLayer(clusterIncendios);
+        fullMap.addLayer(clusterResgates);
+        fullMap.addLayer(clusterOutros);
     } else {
-        fullMap.removeLayer(mapMarkerCluster);
+        fullMap.removeLayer(clusterIncendios);
+        fullMap.removeLayer(clusterResgates);
+        fullMap.removeLayer(clusterOutros);
         if (fullHeatLayer) fullMap.addLayer(fullHeatLayer);
     }
 }
@@ -913,6 +1168,7 @@ async function updateFullMapData(data) {
 
     if (fullHeatLayer) fullMap.removeLayer(fullHeatLayer);
     if (mapMarkerCluster) mapMarkerCluster.clearLayers();
+    allMapMarkers = [];
 
     const heatPoints = [];
     const geocache = JSON.parse(localStorage.getItem('dashboard_geocache') || '{}');
@@ -935,54 +1191,91 @@ async function updateFullMapData(data) {
     let tempoOcorrencias = 0;
     const cityCount = {};
 
+    const itemsToGeocode = [];
+
     for (const item of dataToProcess) {
         if (signal.aborted) return;
         
         if (!item.cidade) continue;
 
-        let query = `${item.endereco || ''}, ${item.cidade}, SP, Brasil`.trim();
-        if (query.startsWith(',')) query = `${item.cidade}, SP, Brasil`;
-        
-        let coords = geocache[query];
+        let coords = null;
 
-        if (!coords) {
-            try {
-                await new Promise(r => setTimeout(r, 1000)); // 1 req/s nominatim
-                if (signal.aborted) return;
+        // Prioridade 1: Coordenadas Nativas da Planilha (Evita gargalo de geocoding)
+        if (item.latitude !== null && !isNaN(item.latitude) && item.longitude !== null && !isNaN(item.longitude)) {
+            coords = [item.latitude, item.longitude];
+        } else {
+            // Prioridade 2: Fallback para Cache
+            let query = `${item.endereco || ''}, ${item.cidade}, SP, Brasil`.trim();
+            if (query.startsWith(',')) query = `${item.cidade}, SP, Brasil`;
+            
+            coords = geocache[query];
 
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, { signal });
-                const resData = await response.json();
-                
-                if (resData && resData.length > 0) {
-                    coords = [parseFloat(resData[0].lat), parseFloat(resData[0].lon)];
-                    geocache[query] = coords;
-                    cacheUpdated = true;
-                }
-            } catch (err) {
-                if (err.name !== 'AbortError') console.warn("Geocoding err:", err);
+            if (!coords) {
+                // Adiciona à fila de background para não travar a UI
+                itemsToGeocode.push({ item, query });
+                continue; 
             }
         }
 
         if (coords) {
             heatPoints.push(coords);
+            globalValidPoints.push(coords);
             validPointsCount++;
 
-            // Popup do marcador
+            // Popup do marcador (Enriquecido)
             const dateStr = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '';
+            const latStr = coords[0];
+            const lngStr = coords[1];
+            
+            let color = '#3b82f6';
+            let iconCode = 'fa-bars-staggered';
+            let cat = 'outros';
+            
+            const natUpper = (item.natureza || '').toUpperCase();
+            if (natUpper.includes('FOGO') || natUpper.includes('INCÊNDIO')) {
+                color = '#ef4444';
+                iconCode = 'fa-fire';
+                cat = 'incendio';
+            } else if (natUpper.includes('ACIDENTE') || natUpper.includes('RESGATE') || natUpper.includes('QUEDA')) {
+                color = '#eab308';
+                iconCode = 'fa-truck-medical';
+                cat = 'resgate';
+            }
+
             const popup = `
-                <div style="color: #0a0e17; min-width: 200px; font-family: sans-serif;">
-                    <strong style="color: #2563eb; display:block; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 4px;">${item.natureza || 'N/I'}</strong>
-                    <div style="font-size: 12px; line-height: 1.4;">
+                <div style="color: #0a0e17; min-width: 220px; font-family: sans-serif;">
+                    <div style="background-color: ${color}; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid ${iconCode}"></i>
+                        <span style="flex-1">${item.natureza || 'N/I'}</span>
+                    </div>
+                    <div style="padding: 10px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 6px 6px; font-size: 13px; line-height: 1.5;">
                         <b>Talão:</b> ${item.talao}<br>
                         <b>Viatura:</b> ${item.viatura} (${item.prontidao})<br>
                         <b>Data:</b> ${dateStr}<br>
-                        <b>Tempo Resp:</b> ${item.tempoMinutos ? item.tempoMinutos + ' min' : 'N/I'}<br>
+                        <b>QTR Saída:</b> ${item.qtrSaida || 'N/I'}<br>
                         ${item.endereco ? '<b>Local:</b> ' + item.endereco + '<br>' : ''}
-                        <b>Cidade:</b> ${item.cidade}
+                        <b>Cidade:</b> ${item.cidade}<br>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${latStr},${lngStr}" target="_blank" style="display: block; text-align: center; margin-top: 10px; background: #2563eb; color: white; padding: 6px; border-radius: 4px; text-decoration: none; font-weight: bold;">
+                            <i class="fa-solid fa-route"></i> Traçar Rota
+                        </a>
                     </div>
                 </div>`;
             const marker = L.marker(coords).bindPopup(popup);
-            mapMarkerCluster.addLayer(marker);
+            
+            if (cat === 'incendio') {
+                if (clusterIncendios) clusterIncendios.addLayer(marker);
+            } else if (cat === 'resgate') {
+                if (clusterResgates) clusterResgates.addLayer(marker);
+            } else {
+                if (clusterOutros) clusterOutros.addLayer(marker);
+            }
+
+            let hour = 24;
+            if (item.horaSaida) {
+                const parsed = parseInt(item.horaSaida);
+                if (!isNaN(parsed)) hour = parsed;
+            }
+            allMapMarkers.push({ marker, cat, hour });
 
             // KPIs
             const nat = item.natureza || 'OUTRAS';
@@ -1013,6 +1306,10 @@ async function updateFullMapData(data) {
         // Centraliza o mapa
         const bounds = L.latLngBounds(heatPoints);
         fullMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+    }
+
+    if (itemsToGeocode.length > 0) {
+        processGeocodingBackground(itemsToGeocode, geocache, heatPoints, mapMarkerCluster, signal);
     }
 
     // Atualiza KPIs da tela
@@ -1977,4 +2274,68 @@ function renderAbastecimentoDashboard() {
     if (cardValor) cardValor.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValor);
     if (cardVolume) cardVolume.textContent = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(totalVolume) + ' L';
     if (cardKml) cardKml.textContent = avgKml;
+}
+
+// Processamento assíncrono de Geocoding (Não bloqueia a tela)
+async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, mapMarkerCluster, signal) {
+    const uiStatus = document.getElementById('geocoding-status');
+    const uiCount = document.getElementById('geocoding-count');
+    const uiProgress = document.getElementById('geocoding-progress');
+    
+    if (uiStatus) uiStatus.classList.remove('hidden');
+
+    let processed = 0;
+    const total = itemsToGeocode.length;
+    let cacheUpdated = false;
+
+    for (const { item, query } of itemsToGeocode) {
+        if (signal && signal.aborted) return;
+        
+        try {
+            await new Promise(r => setTimeout(r, 1000)); // 1 req/s nominatim limit
+            if (signal && signal.aborted) return;
+
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, { signal });
+            const resData = await response.json();
+            
+            if (resData && resData.length > 0) {
+                const coords = [parseFloat(resData[0].lat), parseFloat(resData[0].lon)];
+                geocache[query] = coords;
+                cacheUpdated = true;
+                
+                heatPoints.push(coords);
+
+                // Add popup
+                const dateStr = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '';
+                const popup = `
+                    <div style="color: #0a0e17; min-width: 200px; font-family: sans-serif;">
+                        <strong style="color: #2563eb; display:block; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 4px;">${item.natureza || 'N/I'}</strong>
+                        <div style="font-size: 12px; line-height: 1.4;">
+                            <b>Talão:</b> ${item.talao}<br>
+                            <b>Viatura:</b> ${item.viatura} (${item.prontidao})<br>
+                            <b>Data:</b> ${dateStr}<br>
+                            <b>Tempo Resp:</b> ${item.tempoMinutos ? item.tempoMinutos + ' min' : 'N/I'}<br>
+                            ${item.endereco ? '<b>Local:</b> ' + item.endereco + '<br>' : ''}
+                            <b>Cidade:</b> ${item.cidade}
+                        </div>
+                    </div>`;
+                const marker = L.marker(coords).bindPopup(popup);
+                mapMarkerCluster.addLayer(marker);
+                
+                // Update Heatmap if active
+                if (fullHeatLayer) {
+                    fullHeatLayer.setLatLngs(heatPoints);
+                }
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') console.warn("Geocoding background err:", err);
+        }
+
+        processed++;
+        if (uiCount) uiCount.textContent = `${processed}/${total}`;
+        if (uiProgress) uiProgress.style.width = `${(processed / total) * 100}%`;
+    }
+
+    if (cacheUpdated) localStorage.setItem('dashboard_geocache', JSON.stringify(geocache));
+    if (uiStatus) uiStatus.classList.add('hidden');
 }

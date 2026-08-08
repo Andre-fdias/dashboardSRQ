@@ -125,9 +125,24 @@ function processSheetData(rows, sheetName) {
         const talao = String(row[2]).trim();
         const idOcorrencia = `${ano}-${talao}`;
 
-        // Extrai hora de saída (ex: "18:25" -> "18")
-        const qtrSaida = row[4] ? String(row[4]).trim() : '';
-        const horaSaida = qtrSaida.includes(':') ? qtrSaida.split(':')[0] : '';
+        // Extrai hora de saída
+        let qtrSaida = '';
+        let horaSaida = '';
+        if (row[4] instanceof Date) {
+            qtrSaida = row[4].toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            horaSaida = String(row[4].getHours());
+        } else if (typeof row[4] === 'number') {
+            // Excel time as decimal fraction of 24h
+            const totalHours = row[4] * 24;
+            const h = Math.floor(totalHours);
+            const m = Math.round((totalHours - h) * 60);
+            qtrSaida = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            horaSaida = String(h);
+        } else {
+            qtrSaida = row[4] ? String(row[4]).trim() : '';
+            const match = qtrSaida.match(/(\d{1,2}):/);
+            if (match) horaSaida = match[1];
+        }
 
         return {
             id: idOcorrencia,
@@ -152,6 +167,8 @@ function processSheetData(rows, sheetName) {
             cidade: row[16] ? String(row[16]).trim().toUpperCase() : '', // Q = CIDADE
             telegrafista: row[17] ? String(row[17]).trim() : '', // R = TELEGRAFISTA
             observacoes: row[18] ? String(row[18]).trim() : '', // S = OBSERVAÇÕES
+            latitude: normalizeCoord(row[19], true),
+            longitude: normalizeCoord(row[20], false),
             
             // Campos técnicas de apoio
             ano: ano,
@@ -160,6 +177,30 @@ function processSheetData(rows, sheetName) {
             horaSaida: horaSaida
         };
     }).filter(row => row !== null);
+}
+
+// Corrige números corrompidos pelo Excel/Sheets (ex: -235.989.115 virando -23.5989115)
+function normalizeCoord(val, isLat) {
+    if (val === undefined || val === null) return null;
+    let s = String(val).trim().toUpperCase();
+    if (s === 'N/A' || s === '') return null;
+    
+    let clean = s.replace(/[^0-9-]/g, ''); 
+    if (clean === '' || clean === '-') return null;
+
+    if (isLat) {
+        if (clean.length > 3 && (clean.startsWith('-23') || clean.startsWith('-24'))) {
+            return parseFloat(clean.substring(0, 3) + '.' + clean.substring(3));
+        }
+    } else {
+        if (clean.length > 3 && (clean.startsWith('-46') || clean.startsWith('-47') || clean.startsWith('-48'))) {
+            return parseFloat(clean.substring(0, 3) + '.' + clean.substring(3));
+        }
+    }
+    
+    let fallback = parseFloat(s.replace(',', '.'));
+    if (!isNaN(fallback) && fallback >= -90 && fallback <= 90) return fallback;
+    return null;
 }
 
 // ==========================================

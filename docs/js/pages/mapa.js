@@ -62,26 +62,32 @@ async function updateMap() {
     for (const item of dataToMap) {
         if (!item.cidade) continue;
 
-        let query = `${item.endereco || ''}, ${item.cidade}, SP, Brasil`.trim();
-        if (query.startsWith(',')) query = `${item.cidade}, SP, Brasil`;
+        let coords = null;
 
-        let coords = geocache[query];
+        if (item.latitude !== null && !isNaN(item.latitude) && item.longitude !== null && !isNaN(item.longitude)) {
+            coords = [item.latitude, item.longitude];
+        } else {
+            let query = `${item.endereco || ''}, ${item.cidade}, SP, Brasil`.trim();
+            if (query.startsWith(',')) query = `${item.cidade}, SP, Brasil`;
 
-        if (!coords) {
-            try {
-                // Atraso de 1 segundo para respeitar o rate-limit público da API Nominatim
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-                const data = await response.json();
-                
-                if (data && data.length > 0) {
-                    coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                    geocache[query] = coords;
-                    cacheUpdated = true;
+            coords = geocache[query];
+
+            if (!coords) {
+                try {
+                    // Atraso de 1 segundo para respeitar o rate-limit público da API Nominatim
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                    const data = await response.json();
+                    
+                    if (data && data.length > 0) {
+                        coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        geocache[query] = coords;
+                        cacheUpdated = true;
+                    }
+                } catch (err) {
+                    console.warn("Falha no geocoding para:", query, err);
                 }
-            } catch (err) {
-                console.warn("Falha no geocoding para:", query, err);
             }
         }
 

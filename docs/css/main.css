@@ -619,3 +619,41 @@ body {
 .dataTable-pagination a { background: transparent !important; color: #b0c0d8 !important; border: none !important; }
 .dataTable-pagination li.active a { background: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important; font-weight: bold; border-radius: 0.25rem; }
 .dataTable-pagination a:hover { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; border-radius: 0.25rem; }
+
+/* Leaflet Layer Control Dark Mode */
+.leaflet-control-layers {
+    background-color: rgba(10, 14, 23, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(8px) !important;
+    color: #e8edf5 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+    padding: 8px !important;
+}
+.leaflet-control-layers-expanded {
+    padding: 12px !important;
+}
+.leaflet-control-layers-toggle {
+    filter: invert(1) hue-rotate(180deg) brightness(1.5) !important;
+    opacity: 0.8;
+}
+.leaflet-control-layers-toggle:hover {
+    opacity: 1;
+}
+.leaflet-control-layers-overlays label {
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-weight: 500;
+}
+.leaflet-control-layers-overlays label:last-child {
+    margin-bottom: 0 !important;
+}
+.leaflet-control-layers-overlays input[type="checkbox"] {
+    accent-color: #3b82f6 !important;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin-right: 4px;
+}
