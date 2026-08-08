@@ -2559,7 +2559,7 @@ function updateQtaTab() {
             backgroundColor: 'transparent',
             tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
             legend: { show: false },
-            grid: { left: '3%', right: '15%', bottom: '3%', top: '3%', containLabel: true },
+            grid: { left: '3%', right: '25%', bottom: '3%', top: '3%', containLabel: true },
             xAxis: { type: 'value', show: false },
             yAxis: { 
                 type: 'category', 
@@ -2590,7 +2590,7 @@ function updateQtaTab() {
             backgroundColor: 'transparent',
             tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
             legend: { show: false },
-            grid: { left: '3%', right: '15%', bottom: '3%', top: '3%', containLabel: true },
+            grid: { left: '3%', right: '25%', bottom: '3%', top: '3%', containLabel: true },
             xAxis: { type: 'value', show: false },
             yAxis: { 
                 type: 'category', 
