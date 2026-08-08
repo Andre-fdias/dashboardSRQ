@@ -1182,7 +1182,6 @@ async function updateFullMapData(data) {
     const uiProgress = document.getElementById('geocoding-progress');
     
     if (uiStatus) uiStatus.classList.remove('hidden');
-
     let cacheUpdated = false;
     let validPointsCount = 0;
     
@@ -1191,12 +1190,17 @@ async function updateFullMapData(data) {
     let tempoOcorrencias = 0;
     const cityCount = {};
 
+    globalTotalMapPoints = 0;
+    globalMappedPoints = 0;
+
     const itemsToGeocode = [];
 
     for (const item of dataToProcess) {
         if (signal.aborted) return;
         
         if (!item.cidade) continue;
+
+        globalTotalMapPoints++;
 
         let coords = null;
 
@@ -1221,6 +1225,7 @@ async function updateFullMapData(data) {
             heatPoints.push(coords);
             globalValidPoints.push(coords);
             validPointsCount++;
+            globalMappedPoints++;
 
             // Popup do marcador (Enriquecido)
             const dateStr = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '';
@@ -1311,6 +1316,8 @@ async function updateFullMapData(data) {
     if (itemsToGeocode.length > 0) {
         processGeocodingBackground(itemsToGeocode, geocache, heatPoints, mapMarkerCluster, signal);
     }
+
+    updateMapStatsUI();
 
     // Atualiza KPIs da tela
     const kpiTotal = document.getElementById('kpi-map-total');
@@ -2304,7 +2311,9 @@ async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, 
                 cacheUpdated = true;
                 
                 heatPoints.push(coords);
-
+                globalMappedPoints++;
+                updateMapStatsUI();
+                
                 // Add popup
                 const dateStr = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '';
                 const popup = `
@@ -2320,7 +2329,25 @@ async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, 
                         </div>
                     </div>`;
                 const marker = L.marker(coords).bindPopup(popup);
-                mapMarkerCluster.addLayer(marker);
+                
+                // Adiciona ao cluster correspondente
+                let cat = 'outros';
+                if (item.natureza) {
+                    const nat = item.natureza.toLowerCase();
+                    if (nat.includes('incêndio') || nat.includes('fogo')) cat = 'incendio';
+                    else if (nat.includes('resgate') || nat.includes('acidente') || nat.includes('salvamento') || nat.includes('atropelamento') || nat.includes('queda')) cat = 'resgate';
+                }
+
+                if (cat === 'incendio' && clusterIncendios) clusterIncendios.addLayer(marker);
+                else if (cat === 'resgate' && clusterResgates) clusterResgates.addLayer(marker);
+                else if (clusterOutros) clusterOutros.addLayer(marker);
+
+                let hour = 24;
+                if (item.horaSaida) {
+                    const parsed = parseInt(item.horaSaida);
+                    if (!isNaN(parsed)) hour = parsed;
+                }
+                allMapMarkers.push({ marker, cat, hour });
                 
                 // Update Heatmap if active
                 if (fullHeatLayer) {
@@ -2338,4 +2365,23 @@ async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, 
 
     if (cacheUpdated) localStorage.setItem('dashboard_geocache', JSON.stringify(geocache));
     if (uiStatus) uiStatus.classList.add('hidden');
+}
+
+let globalTotalMapPoints = 0;
+let globalMappedPoints = 0;
+
+function updateMapStatsUI() {
+    const domStats = document.getElementById('map-render-stats');
+    const domPct = document.getElementById('map-render-pct');
+    const domMissing = document.getElementById('map-render-missing');
+    
+    if (domStats && domPct && domMissing && globalTotalMapPoints > 0) {
+        domStats.classList.remove('hidden');
+        const pct = Math.round((globalMappedPoints / globalTotalMapPoints) * 100);
+        const missing = globalTotalMapPoints - globalMappedPoints;
+        
+        domPct.textContent = `${pct}%`;
+        domPct.className = `font-bold text-sm leading-none ${pct >= 90 ? 'text-green-400' : (pct >= 70 ? 'text-yellow-400' : 'text-red-400')}`;
+        domMissing.textContent = missing;
+    }
 }
