@@ -1,21 +1,173 @@
-<div class="glass-panel p-8 rounded-3xl z-10 text-center max-w-2xl mx-auto mt-10">
-    <i class="fa-solid fa-fire-extinguisher text-6xl text-yellow-500 mb-6"></i>
-    <h1 class="text-3xl font-extrabold text-white mb-2">EB SÃO ROQUE</h1>
-    <h2 class="text-lg text-[#6b7fa0] mb-8">Portal Analítico Operacional</h2>
-    
-    <p class="text-[#b0c0d8] mb-8 text-sm leading-relaxed">
-        Sistema desenvolvido para consolidação e análise de dados operacionais do 15º Grupamento de Bombeiros, 2º Subgrupamento. 
-        Este painel permite a visualização em tempo real das estatísticas de atendimento, distribuição de viaturas e mapas de calor.
-    </p>
+<div class="max-w-4xl mx-auto space-y-6 pb-12">
+    <!-- Header Card -->
+    <div class="glass-panel p-8 rounded-3xl text-center relative overflow-hidden border border-white/10">
+        <div class="absolute -top-12 -right-12 w-48 h-48 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="grid grid-cols-2 gap-4 text-left">
-        <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-            <h4 class="text-xs uppercase text-[#5a6f8a] mb-1">Versão</h4>
-            <p class="text-white font-semibold">3.0.0</p>
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-red-500/20 border border-yellow-500/30 mb-5 shadow-lg shadow-yellow-500/10">
+            <i class="fa-solid fa-fire-extinguisher text-4xl text-yellow-500"></i>
         </div>
-        <div class="bg-black/20 p-4 rounded-2xl border border-white/5">
-            <h4 class="text-xs uppercase text-[#5a6f8a] mb-1">Atualização</h4>
-            <p class="text-white font-semibold">2026</p>
+        
+        <h1 class="text-3xl font-black text-white tracking-wide uppercase mb-2">EB SÃO ROQUE</h1>
+        <h2 class="text-base text-yellow-500 font-semibold mb-4">15º Grupamento de Bombeiros • 2º Subgrupamento</h2>
+        
+        <p class="text-[#b0c0d8] max-w-2xl mx-auto text-sm leading-relaxed mb-6">
+            Portal Analítico Operacional e de Gestão de Frotas desenvolvido para consolidação, monitoramento em tempo real e auditoria técnica dos serviços de emergência e prontidão da Estação de Bombeiros de São Roque.
+        </p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+            <div class="bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                <span class="text-[10px] uppercase font-bold text-[#5a6f8a] block tracking-wider">Versão</span>
+                <span class="text-white font-bold text-sm">3.0.0</span>
+            </div>
+            <div class="bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                <span class="text-[10px] uppercase font-bold text-[#5a6f8a] block tracking-wider">Arquitetura</span>
+                <span class="text-white font-bold text-sm">SPA Vanilla JS</span>
+            </div>
+            <div class="bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                <span class="text-[10px] uppercase font-bold text-[#5a6f8a] block tracking-wider">Integração</span>
+                <span class="text-white font-bold text-sm">Google Sheets (GViz)</span>
+            </div>
+            <div class="bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                <span class="text-[10px] uppercase font-bold text-[#5a6f8a] block tracking-wider">Última Atualização</span>
+                <span class="text-white font-bold text-sm">Outubro / 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulos do Sistema -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Módulo Operacional -->
+        <div class="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-lg border border-blue-500/30">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Módulo Operacional</h3>
+                        <p class="text-xs text-[#6b7fa0]">Estatísticas de Ocorrências e Despachos</p>
+                    </div>
+                </div>
+                <ul class="space-y-2.5 text-xs text-[#b0c0d8]">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-blue-400 mt-0.5 text-[10px]"></i>
+                        <span><strong>Visão Executiva:</strong> KPIs de ocorrências, vítimas socorridas e tempo médio de resposta.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-blue-400 mt-0.5 text-[10px]"></i>
+                        <span><strong>Análise Geográfica:</strong> Mapa de calor e distribuição de chamados por bairros e municípios atendidos.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-blue-400 mt-0.5 text-[10px]"></i>
+                        <span><strong>Prontidões & Naturezas:</strong> Indicadores de empenho por equipe e tipologia das ocorrências.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Módulo de Gestão de Frota -->
+        <div class="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-lg border border-yellow-500/30">
+                        <i class="fa-solid fa-truck-medical"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Módulo de Frota & Logística</h3>
+                        <p class="text-xs text-[#6b7fa0]">Monitoramento Técnico e Prontidão das Viaturas</p>
+                    </div>
+                </div>
+                <ul class="space-y-2.5 text-xs text-[#b0c0d8]">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-yellow-400 mt-0.5 text-[10px]"></i>
+                        <span><strong>Painel de Viaturas:</strong> Visualização filtrada exclusivamente para viaturas operacionais de São Roque (UR-15218, ABS-15201, etc.).</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-yellow-400 mt-0.5 text-[10px]"></i>
+                        <span><strong>Detalhamento Individual:</strong> Ficha técnica completa, hodômetro, horímetro e timeline cronológica de eventos.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-yellow-400 mt-0.5 text-[10px]"></i>
+                        <span><strong>Checklists & Avarias:</strong> Inspeção minuciosa com apontamento instantâneo de inconformidades e histórico de abastecimento.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Novidades e Ajustes Recentes -->
+    <div class="glass-panel p-6 rounded-3xl border border-white/5">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles text-yellow-500"></i>
+            Melhorias e Atualizações Recentes (v3.0.0)
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2 text-white font-semibold mb-1">
+                    <i class="fa-solid fa-id-badge text-yellow-400"></i>
+                    Badges de Equipe na Timeline
+                </div>
+                <p class="text-[#8ba2c4]">
+                    Identificação visual imediata da prontidão responsável pelo evento com cores padronizadas (Amarela, Azul, Verde) em badges arredondados.
+                </p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2 text-white font-semibold mb-1">
+                    <i class="fa-solid fa-clipboard-check text-green-400"></i>
+                    Metadados e Auditoria de Checklist
+                </div>
+                <p class="text-[#8ba2c4]">
+                    Separação estrutural de "Dia da Prontidão" e "Equipe" para o cabeçalho do modal, garantindo que apenas inconformidades reais sejam destacadas em vermelho.
+                </p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2 text-white font-semibold mb-1">
+                    <i class="fa-solid fa-filter text-blue-400"></i>
+                    Filtros Dinâmicos por Viatura
+                </div>
+                <p class="text-[#8ba2c4]">
+                    Adicionados seletores dedicados nas tabelas de <em>Avarias</em> e <em>Checklist</em> com contadores de registros atualizados em tempo real.
+                </p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2 text-white font-semibold mb-1">
+                    <i class="fa-solid fa-language text-purple-400"></i>
+                    DataTables 100% em Português
+                </div>
+                <p class="text-[#8ba2c4]">
+                    Dicionário pt-BR embutido nativamente no cliente, eliminando atrasos de CDN e garantindo interface inteiramente em língua portuguesa.
+                </p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 sm:col-span-2">
+                <div class="flex items-center gap-2 text-white font-semibold mb-1">
+                    <i class="fa-solid fa-mobile-screen text-teal-400"></i>
+                    Menu Sanduíche & Responsividade Mobile
+                </div>
+                <p class="text-[#8ba2c4]">
+                    Menu deslizante superior acionado pelo botão hambúrguer no cabeçalho com backdrop blur, com todas as opções principais integradas e remoção de artefatos do rodapé antigo.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tecnologias Utilizadas -->
+    <div class="glass-panel p-6 rounded-3xl border border-white/5 text-center">
+        <h4 class="text-xs uppercase font-bold text-[#5a6f8a] tracking-wider mb-4">Tecnologias e Bibliotecas</h4>
+        <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-[#b0c0d8]">
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-brands fa-html5 text-orange-500 mr-1.5"></i>HTML5 Semântico</span>
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-brands fa-js text-yellow-400 mr-1.5"></i>Vanilla JavaScript (ES6+)</span>
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-brands fa-css3-alt text-blue-400 mr-1.5"></i>Tailwind CSS (Glassmorphism)</span>
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-solid fa-table text-green-400 mr-1.5"></i>Google Visualization API</span>
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-solid fa-chart-pie text-indigo-400 mr-1.5"></i>Apache ECharts</span>
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-solid fa-map-location-dot text-emerald-400 mr-1.5"></i>Leaflet.js</span>
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-solid fa-table-list text-cyan-400 mr-1.5"></i>DataTables (pt-BR)</span>
+            <span class="px-3 py-1.5 rounded-xl bg-black/30 border border-white/5"><i class="fa-solid fa-icons text-amber-400 mr-1.5"></i>FontAwesome 6</span>
         </div>
     </div>
 </div>

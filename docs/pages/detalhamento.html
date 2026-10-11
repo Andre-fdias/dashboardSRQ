@@ -1,0 +1,247 @@
+<!-- Cabeçalho da Ficha da Viatura -->
+<div class="glass-panel p-4 rounded-3xl z-10 mb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+    <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-yellow-600/5 border border-yellow-500/20 flex items-center justify-center text-yellow-400 text-xl flex-shrink-0">
+            <i class="fa-solid fa-truck"></i>
+        </div>
+        <div>
+            <div class="flex items-center gap-3">
+                <h5 class="text-lg font-bold tracking-wider text-white uppercase" id="det-vtr-title">
+                    Ficha da Viatura: --
+                </h5>
+                <span id="det-vtr-status-chip" class="text-[10px] font-bold px-2.5 py-0.5 rounded-lg border">
+                    --
+                </span>
+            </div>
+            <p class="text-xs text-[#5a6f8a]" id="det-vtr-subtitle">
+                Selecione uma viatura para visualizar todo o histórico operacional
+            </p>
+        </div>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
+        <!-- Seletor Rápido de Viatura -->
+        <div class="relative">
+            <select id="select-det-viatura" class="bg-[#0a0e17] border border-white/10 text-white text-xs rounded-xl px-3 py-2 pr-8 focus:outline-none focus:border-yellow-500/50 cursor-pointer appearance-none">
+                <option value="">Selecione Viatura...</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none"></i>
+        </div>
+
+        <button class="btn-filter btn-filter-secondary text-xs flex items-center gap-2" id="btn-voltar-viaturas" onclick="window.location.hash='#viaturas'">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </button>
+    </div>
+</div>
+
+<!-- 4 Mini-Cards de Identificação e Indicadores -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 z-10">
+    <!-- Card 1: Viatura -->
+    <div class="glass-panel p-4 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute -right-3 -top-3 text-white/5 rotate-[-15deg] z-0 pointer-events-none">
+            <i class="fa-solid fa-car text-[80px]"></i>
+        </div>
+        <div class="relative z-10">
+            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Viatura</p>
+            <h3 class="text-xl font-bold text-white mt-0.5 mb-2" id="det-card-placa">--</h3>
+            <div class="space-y-1 text-xs text-[#cbd5e1]">
+                <div>Modelo: <span class="text-white font-medium" id="det-card-modelo">--</span></div>
+                <div>Tipo: <span class="text-white font-medium" id="det-card-tipo">--</span></div>
+                <div>Garagem: <span class="text-white font-medium" id="det-card-garagem">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Operacional -->
+    <div class="glass-panel p-4 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute -right-3 -top-3 text-blue-500/5 rotate-[-15deg] z-0 pointer-events-none">
+            <i class="fa-solid fa-building-shield text-[80px]"></i>
+        </div>
+        <div class="relative z-10">
+            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Operacional</p>
+            <h3 class="text-xl font-bold text-[#3b82f6] mt-0.5 mb-2 truncate" id="det-card-base">--</h3>
+            <div class="space-y-1 text-xs text-[#cbd5e1]">
+                <div>SGB: <span class="text-white font-medium" id="det-card-sgb">--</span></div>
+                <div>Status: <span class="font-bold" id="det-card-status">--</span></div>
+                <div>Combustível: <span class="text-white font-medium" id="det-card-combustivel">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Performance -->
+    <div class="glass-panel p-4 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute -right-3 -top-3 text-emerald-500/5 rotate-[-15deg] z-0 pointer-events-none">
+            <i class="fa-solid fa-gauge text-[80px]"></i>
+        </div>
+        <div class="relative z-10">
+            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Performance</p>
+            <h3 class="text-xl font-bold text-[#10b981] mt-0.5 mb-2" id="det-card-km">--</h3>
+            <div class="space-y-1 text-xs text-[#cbd5e1]">
+                <div>Consumo Médio: <span class="text-white font-medium" id="det-card-consumo">--</span></div>
+                <div>Checklists: <span class="text-white font-medium" id="det-card-total-chk">--</span></div>
+                <div>Avarias: <span class="text-white font-medium" id="det-card-total-avarias">--</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Abastecimento -->
+    <div class="glass-panel p-4 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute -right-3 -top-3 text-yellow-500/5 rotate-[-15deg] z-0 pointer-events-none">
+            <i class="fa-solid fa-gas-pump text-[80px]"></i>
+        </div>
+        <div class="relative z-10">
+            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Abastecimento</p>
+            <h3 class="text-xl font-bold text-[#eab308] mt-0.5 mb-2" id="det-card-gasto">--</h3>
+            <div class="space-y-1 text-xs text-[#cbd5e1]">
+                <div>Volume Total: <span class="text-white font-medium" id="det-card-litros">--</span></div>
+                <div>Qtd Abastecimentos: <span class="text-white font-medium" id="det-card-total-abs">--</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas Ativos da Viatura -->
+<div id="det-alertas-container" class="mb-4 z-10 hidden">
+    <div class="glass-panel p-4 rounded-2xl border-red-500/30 bg-red-500/5">
+        <h6 class="text-xs font-bold uppercase text-red-400 flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-triangle-exclamation"></i> Alertas Ativos
+        </h6>
+        <div id="det-alertas-list" class="space-y-2">
+            <!-- Injetado via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Abas de Navegação Detalhada -->
+<div class="glass-panel p-3 rounded-2xl z-10 mb-4 flex flex-wrap gap-2 border-b border-white/10" id="det-tabs-nav">
+    <button data-tab="timeline" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-white/20 border border-white/20 transition flex items-center gap-2 active-det-tab">
+        <i class="fa-solid fa-timeline"></i> Timeline de Eventos
+    </button>
+    <button data-tab="checklists" class="px-4 py-2 rounded-xl text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition flex items-center gap-2">
+        <i class="fa-solid fa-clipboard-check"></i> Checklists Diários (<span id="det-tab-chk-badge">0</span>)
+    </button>
+    <button data-tab="abastecimentos" class="px-4 py-2 rounded-xl text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition flex items-center gap-2">
+        <i class="fa-solid fa-gas-pump"></i> Abastecimentos (<span id="det-tab-abs-badge">0</span>)
+    </button>
+    <button data-tab="revisoes" class="px-4 py-2 rounded-xl text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition flex items-center gap-2">
+        <i class="fa-solid fa-wrench"></i> Manutenções / Revisões (<span id="det-tab-rev-badge">0</span>)
+    </button>
+</div>
+
+<!-- Conteúdo das Abas -->
+<div class="glass-panel p-4 rounded-3xl z-10 mb-4">
+    <!-- ABA: Timeline -->
+    <div id="det-tab-content-timeline" class="det-tab-pane">
+        <h6 class="text-xs font-bold tracking-wider text-blue-400 uppercase mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-timeline"></i> Linha do Tempo Operacional
+        </h6>
+        <div id="det-timeline-feed" class="space-y-3 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-white/10">
+            <!-- Itens de timeline injetados dinamicamente -->
+        </div>
+    </div>
+
+    <!-- ABA: Checklists -->
+    <div id="det-tab-content-checklists" class="det-tab-pane hidden">
+        <h6 class="text-xs font-bold tracking-wider text-blue-400 uppercase mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-list"></i> Histórico de Checklists Realizados
+        </h6>
+        <div class="overflow-x-auto w-full">
+            <table id="table-det-checklists" class="table-dark-custom table w-full" style="width:100%">
+                <thead>
+                    <tr>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Data/Hora</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Responsável</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Equipe</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Hodômetro</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Status</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-right">Ação</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ABA: Abastecimentos -->
+    <div id="det-tab-content-abastecimentos" class="det-tab-pane hidden">
+        <h6 class="text-xs font-bold tracking-wider text-yellow-400 uppercase mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-gas-pump"></i> Registro de Abastecimentos
+        </h6>
+        <div class="overflow-x-auto w-full">
+            <table id="table-det-abastecimentos" class="table-dark-custom table w-full" style="width:100%">
+                <thead>
+                    <tr>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Data</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">KM</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Litros</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-right">Valor Total</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Posto</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Responsável</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ABA: Revisões -->
+    <div id="det-tab-content-revisoes" class="det-tab-pane hidden">
+        <h6 class="text-xs font-bold tracking-wider text-emerald-400 uppercase mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-wrench"></i> Controle de Manutenções e Revisões
+        </h6>
+        <div class="overflow-x-auto w-full">
+            <table id="table-det-revisoes" class="table-dark-custom table w-full" style="width:100%">
+                <thead>
+                    <tr>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Data</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">KM</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Tipo</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Descrição / Peças</th>
+                        <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes do Checklist -->
+<div id="modal-checklist-detalhes" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-[#0d131f] border border-white/20 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div class="p-5 border-b border-white/10 flex justify-between items-center bg-[#0a0e17]">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-lg">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div>
+                    <h5 class="text-sm font-bold text-white uppercase" id="modal-chk-title">Avaliação do Checklist</h5>
+                    <p class="text-xs text-[#5a6f8a]" id="modal-chk-meta">--</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('modal-checklist-detalhes').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="p-5 overflow-y-auto custom-scrollbar space-y-4">
+            <div id="modal-chk-avaria-banner" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+                <span class="font-bold block mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Observações / Anomalias Registradas:</span>
+                <span id="modal-chk-anomalias-text">--</span>
+            </div>
+            
+            <div>
+                <h6 class="text-xs font-bold text-[#7a8ba8] uppercase tracking-wider mb-2">Itens Inspecionados</h6>
+                <div id="modal-chk-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <!-- Itens avaliados injetados via JS -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t border-white/10 bg-[#0a0e17] flex justify-end">
+            <button onclick="document.getElementById('modal-checklist-detalhes').classList.add('hidden')" class="btn-filter btn-filter-secondary text-xs">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>

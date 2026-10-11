@@ -1,86 +1,201 @@
-# Portal Analítico Operacional - Estação de Bombeiros São Roque
+# Portal Analítico Operacional - EB São Roque
+### Corpo de Bombeiros da Polícia Militar do Estado de São Paulo
+**15º Grupamento de Bombeiros • 2º Subgrupamento • Estação de Bombeiros São Roque**
 
-Este projeto é um dashboard 100% estático, focado na visualização de dados operacionais do 15º Grupamento de Bombeiros (2º Subgrupamento de Bombeiros - Estação São Roque). Ele consome os dados diretamente de uma planilha pública do Google Sheets.
+---
 
-## Visão Geral do Projeto
+## 📋 Sumário
+- [Visão Geral](#-visão-geral)
+- [Arquitetura do Sistema](#-arquitetura-do-sistema)
+- [Módulos da Aplicação](#-módulos-da-aplicação)
+  - [Módulos Operacionais](#1-módulos-operacionais)
+  - [Módulo de Gestão de Frota](#2-módulo-de-gestão-de-frota)
+- [Últimas Atualizações e Melhorias](#-últimas-atualizações-e-melhorias)
+- [Estrutura de Diretórios](#-estrutura-de-diretórios)
+- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Execução Local](#-execução-local)
+- [Publicação no GitHub Pages](#-publicação-no-github-pages)
+- [Configuração de Fontes de Dados](#-configuração-de-fontes-de-dados)
 
-- **Arquitetura 100% Estática (Serverless):** Sem backend, sem banco de dados, sem login.
-- **Hospedagem:** Preparado para rodar no GitHub Pages.
-- **Fontes de Dados:** Lê o arquivo `.xlsx` gerado pelo Google Sheets em tempo real.
-- **Performance:** Processamento local no navegador, armazenamento em Cache (LocalStorage) configurável para evitar requisições redundantes à API do Google e Nominatim (Geocoding).
-- **Tecnologias:** HTML5, CSS3, JavaScript (ES2024), Bootstrap 5, Apache ECharts, Leaflet (Mapas), DataTables e SheetJS.
+---
 
-## Arquitetura e Estrutura de Diretórios
+## 🚒 Visão Geral
 
-O projeto obedece ao padrão modular. O código-fonte principal que será servido no GitHub Pages está dentro da pasta `docs/`.
+O **Portal Analítico Operacional de São Roque** é uma plataforma web para consolidação, monitoramento e inteligência operacional da Estação de Bombeiros de São Roque (15º GB / 2º SGB). 
+
+O sistema opera de forma **100% estática (Serverless)**, consumindo dados em tempo real de planilhas operacionais do Google Sheets via API GViz (Google Visualization) e arquivos estruturados, processando e cruzando todas as informações diretamente no navegador do usuário.
+
+---
+
+## 🏛 Arquitetura do Sistema
+
+- **Padrão SPA (Single-Page Application):** Utiliza roteador baseado em hash (`#home`, `#viaturas`, `#detalhamento?vtr=...`, etc.) com carregamento assíncrono de templates HTML via Fetch API e injeção dinâmica em `#app-content`.
+- **Zero Backend / Serverless:** Não depende de servidores dedicados, bancos de dados relacionais ou autenticação externa.
+- **Camada de Dados Centralizada:**
+  - `sheets.js`: Consumo e parse de ocorrências operacionais.
+  - `frota.js`: Consumo concorrente (`Promise.all`) e normalização das planilhas de *Detalhamento de Viaturas*, *Checklist Diário*, *Abastecimentos* e *Controle de Revisões*.
+  - `frota_ui.js`: Controladores e renderizadores de interface para toda a frota.
+- **Responsividade Adaptativa:**
+  - Telas amplas (Desktop): Barra lateral fixa e menus contextuais horizontais.
+  - Telas menores / Mobile: Menu sanduíche acessível no topo do cabeçalho superior (`<header>`) com abertura em gaveta lateral e fundo escurecido com desfoque (`backdrop-blur`).
+
+---
+
+## 📦 Módulos da Aplicação
+
+### 1. Módulos Operacionais
+- **Dashboard Executivo (`#home`):** Visão geral de ocorrências, KPIs diários, comparativos por prontidão e gráficos analíticos.
+- **Ocorrências (`#ocorrencias`):** Tabela dinâmica completa com busca, ordenação cronológica e filtros múltiplos.
+- **Mapa Operacional (`#mapa`):** Visualização geoespacial com mapa de calor (Heatmap) e agrupamento de marcadores (MarkerCluster) via Leaflet.
+- **Prontidões (`#prontidoes`):** Análise volumétrica de atendimentos por equipe/prontidão de serviço.
+- **Naturezas (`#naturezas`):** Estatísticas detalhadas por tipo de sinistro (Incêndios, Salvamentos, Resgates, etc.).
+- **Municípios (`#municipios`):** Distribuição geográfica das ocorrências no território de cobertura.
+- **Linha do Tempo (`#timeline`):** Sequência temporal dos despachos operacionais.
+- **QTA (`#qta`):** Indicadores de finalização e cancelamento de ocorrências.
+
+### 2. Módulo de Gestão de Frota
+- **Painel de Viaturas (`#viaturas`):**
+  - Exibição em **Cards operacionais** ou em **Tabela DataTables**.
+  - Filtragem por status: *Todas, Operando, Reserva, Baixada, Com Alertas, Com Avarias*.
+  - Busca rápida por prefixo, placa, modelo ou garagem.
+  - Clique direto no card/linha para abrir a ficha da viatura.
+- **Ficha da Viatura / Detalhamento (`#detalhamento?vtr=PREFIXO`):**
+  - **4 Mini-Cards KPI**: Identificação técnica (placa, modelo, tipo, garagem), Base/OPM e combustível, KM atual e contagem de checklists/avarias, e Gastos acumulados de abastecimento.
+  - **Alertas Operacionais**: Detecção automática de avarias ativas e anomalias registradas.
+  - **Linha do Tempo Operacional**: Histórico unificado em ordem cronológica decrescente de checklists, abastecimentos e revisões.
+    - Badges arredondados coloridos por equipe: **AMARELA** (amarelo), **AZUL** (azul), **VERDE** (verde).
+    - Alerta inteligente de avarias reais (ocultando avisos indevidos quando o campo for "OK").
+  - **Histórico de Checklists**: Tabela das inspeções diárias com hodômetro, responsável, equipe e botão para visualização completa.
+  - **Histórico de Abastecimentos**: Registro de litragem, valor total, posto e consumo médio.
+  - **Controle de Manutenções/Revisões**: Histórico de ordens de serviço e revisões periódicas.
+- **Modal de Avaliação do Checklist (30 Itens Técnicos):**
+  - **Cabeçalho Informativo**: Identificação da viatura com badge colorido da equipe, data/hora da inspeção, pill com o **Dia da Prontidão** formatado (`DD/MM/AAAA`), responsável e odômetro.
+  - **Grid de Inspeção**: Lista de itens com visualização verde (Conforme/OK) e destaque em vermelho vivo para anomalias relatadas.
+  - Os campos de serviço (*Dia da Prontidão* e *Equipe de Serviço*) são mantidos exclusivamente no cabeçalho, evitando falsos itens de avaria.
+- **Checklists Diários (`#checklist`):**
+  - Listagem geral de todos os checklists da frota.
+  - **Filtro dropdown por viatura** com contagem dinâmica de inspeções por prefixo.
+- **Painel Geral de Avarias e Anomalias (`#avarias`):**
+  - Centralização de todas as pendências e manutenções requeridas.
+  - **Filtro dropdown por viatura** com contagem dinâmica de avarias por prefixo.
+  - Acesso direto com um clique à ficha de detalhamento da viatura.
+- **Controle Geral de Abastecimento (`#abastecimento`):**
+  - Cards de custo total, volume consumido e consumo médio da frota.
+  - Filtros combinados por viatura e intervalo de datas.
+
+---
+
+## 🚀 Últimas Atualizações e Melhorias
+
+1. **Responsividade com Menu Sanduíche no Topo:**
+   - Botão sanduíche integrado no cabeçalho superior (`<header>`) para telas menores ou janelas minimizadas ($\le 1024\text{px}$).
+   - Abertura de gaveta lateral deslizante com backdrop fosco, contendo todas as opções da barra lateral.
+   - Remoção completa de barras residuais de navegação no rodapé, maximizando a área de visualização em dispositivos móveis.
+2. **Filtro Dinâmico de Viaturas em Avarias e Checklists:**
+   - Dropdown inteligente nos cabeçalhos de *Avarias* e *Checklists* com identificação das viaturas e número de registros associados.
+   - Atualização em tempo real dos contadores e da tabela DataTables.
+3. **Internacionalização Nativa das Tabelas (pt-BR):**
+   - Dicionário de tradução embutido diretamente no código (`dataTablePtBr`), eliminando falhas ou atrasos de carregamento de CDNs externos.
+   - Labels traduzidos: *Pesquisar:*, *Exibir ... registros*, *Mostrando de ... até ...*, *Anterior / Próximo*.
+4. **Metadados e Badges na Frota:**
+   - Separação definitiva entre metadados administrativos (*Dia da Prontidão*, *Equipe*) e itens técnicos de inspeção.
+   - Badges coloridos das equipes de serviço em conformidade com as cores oficiais das prontidões do Corpo de Bombeiros.
+
+---
+
+## 📁 Estrutura de Diretórios
 
 ```
-docs/
-├── index.html            # Dashboard Executivo e KPIs Globais
-├── ocorrencias.html      # Tabela dinâmica de ocorrências (DataTables)
-├── mapa.html             # Mapa Operacional com Heatmap e Clusters (Leaflet)
-├── css/
-│   └── main.css          # Identidade visual, cores institucionais e Dark Mode
-├── js/
-│   ├── api/
-│   │   └── sheets.js     # Integração com SheetJS para baixar e converter a planilha
-│   ├── store/
-│   │   └── dataStore.js  # Gerenciamento de Estado, Filtros e Cache (LocalStorage)
-│   ├── components/
-│   │   └── filters.js    # Renderização dinâmica dos filtros globais
-│   ├── layout/
-│   │   ├── theme.js      # Controlador do Tema Claro/Escuro
-│   │   └── sidebar.js    # Controlador da navegação lateral
-│   ├── app.js            # Entry-point da página inicial
-│   └── pages/            # Scripts específicos de cada página (ex: mapa.js)
+dashboardSRQ/
+├── docs/
+│   ├── index.html                  # Shell SPA principal (Cabeçalho, Sidebar, Modal compartilhado)
+│   ├── css/
+│   │   └── main.css                # Estilização completa, Dark Mode, animações e media queries
+│   ├── js/
+│   │   ├── router.js               # Gerenciador de rotas SPA (#hash) e menu sanduíche
+│   │   ├── app.js                  # Inicializador dos módulos analíticos gerais
+│   │   ├── api/
+│   │   │   ├── frota.js            # Integração GViz com as 4 planilhas da frota
+│   │   │   └── sheets.js           # Integração com dados operacionais de ocorrências
+│   │   └── modules/
+│   │       └── frota_ui.js         # Interface e lógica das abas de Viaturas, Detalhamento, Checklists e Avarias
+│   └── pages/                      # Templates parciais carregados dinamicamente via router
+│       ├── home.html               # Dashboard geral de ocorrências
+│       ├── viaturas.html           # Painel de viaturas (Cards/Tabela)
+│       ├── detalhamento.html       # Ficha detalhada da viatura (KPIs, Timeline, Históricos)
+│       ├── checklist.html          # Tabela geral de checklists diários
+│       ├── avarias.html            # Painel geral de avarias com filtro
+│       ├── abastecimento.html      # Painel geral de abastecimentos
+│       ├── ocorrencias.html        # Lista de ocorrências
+│       ├── mapa.html               # Mapa operacional (Leaflet)
+│       ├── prontidoes.html         # Análise de prontidões
+│       ├── naturezas.html          # Análise de naturezas de ocorrências
+│       ├── municipios.html         # Distribuição por municípios
+│       ├── timeline.html           # Linha do tempo de atendimentos
+│       ├── qta.html                # Análise de ocorrências finalizadas/canceladas
+│       └── sobre.html              # Informações institucionais e versão
+└── README.md                       # Documentação do projeto
 ```
 
-## Como Executar Localmente
+---
 
-1. Clone o repositório.
-2. Abra a pasta `docs/` utilizando a extensão **Live Server** (VSCode) ou inicie um servidor HTTP local simples:
-   - Python: `cd docs && python -m http.server 8000`
-   - Node.js: `npx serve docs`
-3. Acesse `http://localhost:8000` no navegador.
+## 🛠 Tecnologias Utilizadas
 
-> **Importante:** Não abra o `index.html` diretamente pelo sistema de arquivos (protocolo `file://`), pois o JavaScript em Módulos (ES Modules) e requisições Fetch bloqueiam acesso local por segurança (CORS).
+- **Estrutura & Estilização:** HTML5 semântico, Tailwind CSS (via CDN) e CSS3 customizado com identidade visual militar/institucional e suporte completo a telas escuras (*Dark Mode*).
+- **Linguagem & Padrões:** JavaScript Moderno (ES6+ / ES Modules).
+- **Visualização de Dados & Gráficos:** Apache ECharts.
+- **Mapas & Geoprocessamento:** Leaflet.js, Leaflet.heat, Leaflet.markercluster, Leaflet-Geoman e Turf.js.
+- **Tabelas Interativas:** jQuery DataTables 1.13 com tradução pt-BR nativa em memória.
+- **Ícones & Tipografia:** FontAwesome 6 e Google Fonts (Inter / Outfit).
 
-## Como Publicar no GitHub Pages
+---
 
-O projeto foi projetado para publicação via GitHub Pages através da pasta `/docs`.
+## 💻 Execução Local
 
-1. Crie um repositório no GitHub.
-2. Envie todos os arquivos (commit e push na branch `main`).
-3. Vá em **Settings** > **Pages** no seu repositório GitHub.
-4. Em **Build and deployment**, selecione **Deploy from a branch**.
-5. Selecione a branch `main` e mude a pasta raiz de `/(root)` para `/docs`.
-6. Salve. O site estará disponível em alguns minutos.
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/Andre-fdias/dashboardSRQ.git
+   cd dashboardSRQ
+   ```
 
-## Como Atualizar a URL da Planilha
+2. Inicie um servidor HTTP local na pasta raiz ou em `/docs`:
+   - **Com Python 3:**
+     ```bash
+     python -m http.server 8080 --directory docs
+     ```
+   - **Com Node.js (npx serve):**
+     ```bash
+     npx serve docs
+     ```
+   - **Com VSCode:** Utilize a extensão *Live Server* abrindo `docs/index.html`.
 
-Para trocar a planilha de origem, edite o arquivo `docs/js/api/sheets.js`:
+3. Abra no navegador:
+   ```
+   http://localhost:8080
+   ```
 
-```javascript
-// Substitua o link abaixo pela sua nova URL publicada:
-const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/.../pub?output=xlsx';
-```
+> **Aviso:** Evite abrir o arquivo `index.html` diretamente via duplo clique no Windows (`file:///...`), pois o navegador bloqueia requisições Fetch e ES Modules locais por políticas de segurança (CORS).
 
-## Como Adicionar Novas Páginas
+---
 
-1. Copie o arquivo `docs/index.html` ou `docs/ocorrencias.html` e renomeie-o.
-2. Altere o título e o conteúdo principal na tag `<main>`.
-3. Adicione o link para a nova página na `sidebar` (`docs/index.html` e nos demais arquivos `.html`).
-4. Crie um script dedicado em `docs/js/pages/nova-pagina.js` e inclua `<script type="module" src="js/pages/nova-pagina.js"></script>` no final do seu novo HTML.
+## 🌐 Publicação no GitHub Pages
 
-## Personalizar Cores e Identidade Visual
+O projeto já está estruturado para publicação contínua no GitHub Pages:
 
-As cores estão centralizadas em `docs/css/main.css` nas variáveis `:root`.
-- `--brand-red`: Cor primária da Estação.
-- `--bg-primary` e `--bg-secondary`: Controlam o fundo da aplicação nos modos claro/escuro.
+1. Acesse o repositório no GitHub: **Settings > Pages**.
+2. Na seção **Build and deployment**:
+   - **Source:** Deploy from a branch.
+   - **Branch:** `main` (ou a branch padrão) e diretório `/docs`.
+3. Clique em **Save**. O portal estará acessível no link público em poucos minutos.
 
-## Estratégia de Cache e Limitações Conhecidas
+---
 
-- O **DataStore** (`dataStore.js`) realiza download da planilha uma única vez a cada 1 hora (configurável). A leitura subsequente entre páginas ocorre imediatamente do LocalStorage (memória do navegador).
-- O **Mapa Operacional** utiliza a API aberta do Nominatim. Como as coordenadas nem sempre estão presentes na planilha, é feito geocoding com cache persistente. O script introduz delays intencionais para respeitar o rate limit da API pública (1 req/sec).
+## 📊 Configuração de Fontes de Dados
 
-> **Atenção (Quota do LocalStorage):** Navegadores normalmente permitem armazenar cerca de 5MB por domínio. Se a planilha ultrapassar dezenas de milhares de linhas, o cache pode falhar. O sistema irá tentar usar apenas requisições diretas neste cenário.
+As planilhas do Google Sheets são consumidas através da API pública do GViz:
+- **Detalhamento de Viaturas**: Informações cadastrais de prefixo, modelo, placa, tipo, base e status.
+- **Checklist Diário**: Registros das inspeções com 30 itens técnicos, hodômetro, militar responsável e equipe.
+- **Abastecimentos**: Litragem, valor total, posto, quilometragem e consumo calculado.
+- **Controle de Revisões**: Manutenções e revisões periódicas da frota.
+
+Para atualizar o ID da planilha ou nomes das abas, ajuste as constantes em [`docs/js/api/frota.js`](file:///docs/js/api/frota.js).

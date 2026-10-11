@@ -1,0 +1,49 @@
+<!-- Título e Contadores -->
+<div class="glass-panel p-4 rounded-3xl z-10 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-lg">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+            <h6 class="text-base font-bold tracking-wider text-white uppercase flex items-center gap-2">
+                Painel Geral de Avarias e Anomalias
+            </h6>
+            <span class="text-xs text-[#5a6f8a]" id="avarias-count-badge">Carregando avarias...</span>
+        </div>
+    </div>
+
+    <!-- Filtro por Viatura -->
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="flex flex-col gap-1 w-full sm:w-60">
+            <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Filtrar por Viatura</label>
+            <div class="relative">
+                <i class="fa-solid fa-truck absolute left-3 top-1/2 -translate-y-1/2 text-yellow-400 text-xs z-10 pointer-events-none"></i>
+                <select id="avarias-filter-prefixo" class="w-full bg-[#0a0e17] border border-white/10 rounded-xl py-2 pl-9 pr-8 text-xs text-white focus:outline-none focus:border-yellow-500/50 transition appearance-none cursor-pointer">
+                    <option value="" class="bg-[#0a0e17] text-white">TODAS AS VIATURAS</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Avarias -->
+<div class="glass-panel p-4 rounded-3xl z-10 overflow-hidden mb-4">
+    <div class="overflow-x-auto w-full">
+        <table id="table-avarias-geral" class="table-dark-custom table w-full" style="width:100%">
+            <thead>
+                <tr>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Data/Hora</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Viatura</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Responsável</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Base / OPM</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Descrição da Avaria</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-right">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Preenchido via DataTables JS -->
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.2/dist/leaflet-geoman.css" />
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css?v=12">
 </head>
 <body>
 
@@ -38,49 +38,52 @@
         <h4 class="mt-3 text-lg font-semibold text-white tracking-widest uppercase">Carregando Dados...</h4>
     </div>
 
-    <!-- ===== SIDEBAR TOGGLE (Mobile) ===== -->
-    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menu">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-
     <!-- ===== HEADER ===== -->
-    <header class="bg-gradient-to-r from-[#0a0e17] to-[#0d1422] border-b border-[#1a2a4a] px-4 md:px-6 h-[65px] flex items-center justify-between shrink-0 sticky top-0 z-40">
-        <div class="flex items-center gap-4">
-            <div class="flex items-center gap-3">
+    <header class="bg-gradient-to-r from-[#0a0e17] to-[#0d1422] border-b border-[#1a2a4a] px-3 sm:px-6 h-[65px] flex items-center justify-between shrink-0 sticky top-0 z-40">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+            <!-- Botão Menu Sanduíche (Mobile / Telas menores) -->
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menu" title="Menu Principal">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <div class="flex items-center gap-2.5">
                 <i class="fa-solid fa-fire-extinguisher text-2xl text-yellow-400"></i>
                 <div>
-                    <h1 class="text-sm font-extrabold tracking-wider flex items-center gap-2">
+                    <h1 class="text-sm font-extrabold tracking-wider flex items-center gap-1.5 sm:gap-2">
                         <span class="text-yellow-400">EB SÃO ROQUE</span>
                         <span class="text-[#6b7fa0] text-xs font-normal">•</span>
                         <span class="text-[#b0c0d8] text-xs font-medium">15º GB / 2º SGB</span>
                     </h1>
-                    <p class="text-[9px] text-[#5a6f8a] font-medium tracking-widest uppercase">Portal Analítico Operacional</p>
+                    <p class="text-[9px] text-[#5a6f8a] font-medium tracking-widest uppercase truncate max-w-[170px] sm:max-w-none">Portal Analítico Operacional</p>
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center gap-3 text-xs">
+        <div class="flex items-center gap-2 sm:gap-3 text-xs">
             <!-- Data/Hora -->
-            <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-[#1a2a4a]">
-                <i class="fa-regular fa-calendar text-[#5a6f8a]"></i>
-                <span class="text-[#b0c0d8] font-medium" id="widget-date">--/--/----</span>
-                <span class="text-[#3d5068]">|</span>
+            <div class="flex items-center gap-1.5 sm:gap-2 bg-black/30 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#1a2a4a]">
+                <i class="fa-regular fa-calendar text-[#5a6f8a] hidden sm:inline"></i>
+                <span class="text-[#b0c0d8] font-medium hidden sm:inline" id="widget-date">--/--/----</span>
+                <span class="text-[#3d5068] hidden sm:inline">|</span>
                 <i class="fa-regular fa-clock text-[#5a6f8a]"></i>
                 <span class="text-yellow-400 font-bold" id="widget-time">--:--</span>
             </div>
 
             <!-- Status -->
-            <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-[#1a2a4a]">
+            <div class="flex items-center gap-1.5 sm:gap-2 bg-black/30 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#1a2a4a]">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-[#5a6f8a] text-[10px] font-medium">Online</span>
+                <span class="text-[#5a6f8a] text-[10px] font-medium hidden sm:inline">Online</span>
             </div>
 
             <!-- Refresh -->
-            <button class="bg-black/30 hover:bg-[#1a2a4a] border border-[#1a2a4a] px-3 py-1.5 rounded-xl transition text-[#7a8ba8] hover:text-[#e8edf5] cursor-pointer" id="btn-refresh" title="Atualizar">
+            <button class="bg-black/30 hover:bg-[#1a2a4a] border border-[#1a2a4a] px-2.5 py-1.5 rounded-xl transition text-[#7a8ba8] hover:text-[#e8edf5] cursor-pointer" id="btn-refresh" title="Atualizar">
                 <i class="fa-solid fa-rotate"></i>
             </button>
         </div>
     </header>
+
+    <!-- Backdrop escuro para fechar a sidebar no mobile -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 hidden transition-opacity lg:hidden"></div>
 
     <!-- ===== LAYOUT PRINCIPAL ===== -->
     <div class="flex">
@@ -104,15 +107,30 @@
                     <i class="fa-solid fa-gauge-high"></i>
                     <span class="sidebar-text">Dashboard</span>
                 </a>
-                <a href="#dejem" class="sidebar-item" data-route="dejem">
-                    <i class="fa-solid fa-user-clock"></i>
-                    <span class="sidebar-text">Dejem</span>
-                </a>
+
                 <a href="#abastecimento" class="sidebar-item" data-route="abastecimento">
                     <i class="fa-solid fa-gas-pump"></i>
                     <span class="sidebar-text">Abastecimento</span>
                 </a>
 
+                
+
+
+                
+                <div class="sidebar-label mt-4">Gestão de Frota</div>
+                
+                <a href="#viaturas" class="sidebar-item" data-route="viaturas">
+                    <i class="fa-solid fa-truck"></i>
+                    <span class="sidebar-text">Viaturas</span>
+                </a>
+                <a href="#checklist" class="sidebar-item" data-route="checklist">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <span class="sidebar-text">Checklist</span>
+                </a>
+                <a href="#avarias" class="sidebar-item" data-route="avarias">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span class="sidebar-text">Avarias</span>
+                </a>
 
                 <div class="sidebar-label mt-4">Sistema</div>
                 <a href="#sobre" class="sidebar-item" data-route="sobre">
@@ -144,7 +162,6 @@
                     <div class="flex items-center min-w-max px-2 py-2 gap-1 dashboard-subnav text-sm">
                         <a href="#home" class="subnav-item active px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="home"><i class="fa-solid fa-chart-line"></i> Visão Geral</a>
                         <a href="#ocorrencias" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="ocorrencias"><i class="fa-solid fa-list-check"></i> Ocorrências <span class="badge ml-1 hidden" id="badge-ocorrencias-sub">0</span></a>
-                        <a href="#viaturas" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="viaturas"><i class="fa-solid fa-truck-fire"></i> Viaturas</a>
                         <a href="#prontidoes" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="prontidoes"><i class="fa-solid fa-users-gear"></i> Efetivo & Naturezas</a>
                         <div class="h-6 w-px bg-white/10 mx-2"></div>
                         <a href="#mapa" class="subnav-item px-4 py-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition flex items-center gap-2" data-route="mapa"><i class="fa-solid fa-map-location-dot"></i> Mapa</a>
@@ -210,13 +227,6 @@
         </div>
     </div>
 
-    <!-- ===== BOTTOM NAV (Mobile) ===== -->
-    <nav class="bottom-nav" id="bottomNav">
-        <a href="#home" class="nav-item active" data-route="home"><i class="fa-solid fa-gauge-high"></i><span>Dash</span></a>
-        <a href="#ocorrencias" class="nav-item" data-route="ocorrencias"><i class="fa-solid fa-list-check"></i><span>Lista</span></a>
-        <a href="#mapa" class="nav-item" data-route="mapa"><i class="fa-solid fa-map-location-dot"></i><span>Mapa</span></a>
-        <a href="#sobre" class="nav-item" data-route="sobre"><i class="fa-solid fa-circle-info"></i><span>Sobre</span></a>
-    </nav>
 
     <!-- ===== SCRIPTS ===== -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -234,10 +244,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
     <!-- Script de Roteamento -->
-    <script type="module" src="js/router.js"></script>
+    <script type="module" src="js/router.js?v=12"></script>
     
-    <!-- Script Principal (App) -->
-    <script type="module" src="js/app.js"></script>
+    <!-- Script Principal (App) e Módulos -->
+    <script src="js/api/frota.js?v=10"></script>
+    <script src="js/modules/frota_ui.js?v=10"></script>
+    <script type="module" src="js/app.js?v=10"></script>
 
 </body>
 </html>

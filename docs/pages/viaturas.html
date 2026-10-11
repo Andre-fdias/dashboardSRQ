@@ -1,86 +1,72 @@
-<!-- Título e Botões de Exportação -->
-<div class="glass-panel p-4 rounded-3xl z-10 mb-4 flex justify-between items-center">
-    <h6 class="text-sm font-bold tracking-wider text-blue-400 uppercase flex items-center gap-2">
-        <i class="fa-solid fa-truck"></i> Análise de Frota Operacional
-    </h6>
-    <button class="btn-filter btn-filter-secondary" id="btn-export-viaturas">
-        <i class="fa-solid fa-file-export"></i> Exportar
-    </button>
-</div>
-
-<!-- KPI Cards -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 z-10">
-    <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl">
-            <i class="fa-solid fa-truck-fast"></i>
+<!-- Título e Controles de Visualização -->
+<div class="glass-panel p-4 rounded-3xl z-10 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 text-lg">
+            <i class="fa-solid fa-truck"></i>
         </div>
         <div>
-            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Mais Acionada</p>
-            <h3 class="text-xl font-bold text-white mt-0.5" id="kpi-vtr-top-calls">--</h3>
+            <h6 class="text-base font-bold tracking-wider text-white uppercase flex items-center gap-2">
+                Painel de Viaturas
+            </h6>
+            <span class="text-xs text-[#5a6f8a]" id="viaturas-count-badge">Carregando viaturas...</span>
         </div>
     </div>
     
-    <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-600/5 border border-yellow-500/20 flex items-center justify-center text-yellow-400 text-xl">
-            <i class="fa-solid fa-route"></i>
-        </div>
-        <div>
-            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Maior Desgaste (KM)</p>
-            <h3 class="text-xl font-bold text-white mt-0.5" id="kpi-vtr-top-km">--</h3>
-        </div>
-    </div>
-    
-    <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/20 flex items-center justify-center text-purple-400 text-xl">
-            <i class="fa-regular fa-clock"></i>
-        </div>
-        <div>
-            <p class="text-[10px] text-[#5a6f8a] uppercase tracking-widest font-semibold">Tempo Médio de Empenho</p>
-            <h3 class="text-xl font-bold text-white mt-0.5" id="kpi-vtr-avg-time">--</h3>
+    <div class="flex items-center gap-2">
+        <!-- Alternador Cards / Tabela -->
+        <div class="flex bg-[#0a0e17] p-1 rounded-xl border border-white/10" id="view-mode-toggle">
+            <button id="btn-view-cards" class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-white/10 border border-white/20 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-table-cells-large"></i> Cards
+            </button>
+            <button id="btn-view-table" class="px-3 py-1.5 rounded-lg text-xs font-bold text-[#cbd5e1] hover:text-white transition flex items-center gap-1.5">
+                <i class="fa-solid fa-list"></i> Tabela
+            </button>
         </div>
     </div>
 </div>
 
-<!-- Gráficos -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 z-10">
-    <div class="glass-panel p-4 rounded-3xl">
-        <h6 class="text-xs font-bold tracking-wider text-[#7a8ba8] uppercase mb-4 text-center">Volume de Acionamentos</h6>
-        <div id="chart-vtr-calls" class="chart-container" style="height: 300px;"></div>
+<!-- Toolbar de Filtros e Busca -->
+<div class="glass-panel p-4 rounded-3xl z-10 mb-4 flex flex-col lg:flex-row justify-between gap-4 items-stretch lg:items-center">
+    <div class="w-full lg:w-96 relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5a6f8a] text-sm"></i>
+        <input type="search" id="search-viatura-card" placeholder="Buscar por prefixo, placa, modelo, base..." 
+            class="w-full bg-[#0a0e17] border border-white/10 rounded-xl text-white pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-yellow-500/50 transition-colors" />
     </div>
     
-    <div class="glass-panel p-4 rounded-3xl">
-        <h6 class="text-xs font-bold tracking-wider text-[#7a8ba8] uppercase mb-4 text-center">Desgaste em KM Rodados</h6>
-        <div id="chart-vtr-km" class="chart-container" style="height: 300px;"></div>
+    <div class="flex gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1 lg:pb-0" id="viaturas-filters">
+        <button data-filter="ALL" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-white/20 border border-white/20 transition active-filter whitespace-nowrap">TODAS</button>
+        <button data-filter="OPERANDO" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition whitespace-nowrap">OPERANDO</button>
+        <button data-filter="RESERVA" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition whitespace-nowrap">RESERVA</button>
+        <button data-filter="BAIXADO" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition whitespace-nowrap">BAIXADO</button>
+        <button data-filter="ALERTAS" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition whitespace-nowrap">ALERTAS</button>
+        <button data-filter="AVARIAS" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#cbd5e1] border border-white/10 hover:bg-white/10 transition whitespace-nowrap">AVARIAS</button>
     </div>
 </div>
 
-<!-- Tabela Analítica -->
-<div class="glass-panel p-4 rounded-3xl z-10 overflow-hidden">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-        <h6 class="text-xs font-bold tracking-wider text-blue-400 uppercase flex items-center gap-2">
-            <i class="fa-solid fa-table"></i> Detalhamento da Frota
-        </h6>
-        <div class="text-[9px] text-[#5a6f8a] uppercase tracking-widest">
-            * Os valores são referentes ao período aplicado no filtro global.
-        </div>
+<!-- Visualização em Cards -->
+<div id="viaturas-cards-view" class="z-10 mb-4">
+    <div id="viaturas-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <!-- Renderizado dinamicamente via JS -->
     </div>
-    
+</div>
+
+<!-- Visualização em Tabela -->
+<div id="viaturas-table-view" class="glass-panel p-4 rounded-3xl z-10 overflow-hidden mb-4 hidden">
     <div class="overflow-x-auto w-full">
-        <table id="table-viaturas-detalhe" class="table-dark-custom table w-full" style="width:100%">
+        <table id="table-viaturas-lista" class="table-dark-custom table w-full" style="width:100%">
             <thead>
                 <tr>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Posição</th>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Viatura</th>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Total Chamados</th>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Efetivadas</th>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Canceladas (QTA)</th>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">KM Rodado</th>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">KM/Ocorrência</th>
-                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Tempo Médio</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Prefixo</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Placa</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Modelo</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Status</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Base / OPM</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Alertas / Avarias</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-right">Ação</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Preenchido via JS -->
+                <!-- Renderizado via JS -->
             </tbody>
         </table>
     </div>

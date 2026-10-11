@@ -1,0 +1,90 @@
+<!-- Título e Contadores -->
+<div class="glass-panel p-4 rounded-3xl z-10 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-lg">
+            <i class="fa-solid fa-clipboard-check"></i>
+        </div>
+        <div>
+            <h6 class="text-base font-bold tracking-wider text-white uppercase flex items-center gap-2">
+                Checklists Diários das Viaturas
+            </h6>
+            <span class="text-xs text-[#5a6f8a]" id="checklist-count-badge">Carregando checklists...</span>
+        </div>
+    </div>
+
+    <!-- Filtro por Viatura -->
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="flex flex-col gap-1 w-full sm:w-60">
+            <label class="text-[10px] font-bold text-[#5a6f8a] uppercase tracking-wider">Filtrar por Viatura</label>
+            <div class="relative">
+                <i class="fa-solid fa-truck absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs z-10 pointer-events-none"></i>
+                <select id="checklist-filter-prefixo" class="w-full bg-[#0a0e17] border border-white/10 rounded-xl py-2 pl-9 pr-8 text-xs text-white focus:outline-none focus:border-blue-500/50 transition appearance-none cursor-pointer">
+                    <option value="" class="bg-[#0a0e17] text-white">TODAS AS VIATURAS</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Checklists -->
+<div class="glass-panel p-4 rounded-3xl z-10 overflow-hidden mb-4">
+    <div class="overflow-x-auto w-full">
+        <table id="table-checklist-geral" class="table-dark-custom table w-full" style="width:100%">
+            <thead>
+                <tr>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Data/Hora</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Viatura</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Responsável</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-left">Equipe/Prontidão</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Hodômetro</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-center">Status</th>
+                    <th class="text-xs uppercase text-[#5a6f8a] border-b border-white/5 py-3 text-right">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Preenchido via DataTables JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Compartilhado de Detalhes do Checklist -->
+<div id="modal-checklist-geral-detalhes" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-[#0d131f] border border-white/20 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div class="p-5 border-b border-white/10 flex justify-between items-center bg-[#0a0e17]">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-lg">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div>
+                    <h5 class="text-sm font-bold text-white uppercase" id="modal-chk-geral-title">Avaliação do Checklist</h5>
+                    <p class="text-xs text-[#5a6f8a]" id="modal-chk-geral-meta">--</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('modal-checklist-geral-detalhes').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="p-5 overflow-y-auto custom-scrollbar space-y-4">
+            <div id="modal-chk-geral-avaria-banner" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+                <span class="font-bold block mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Observações / Anomalias Registradas:</span>
+                <span id="modal-chk-geral-anomalias-text">--</span>
+            </div>
+            
+            <div>
+                <h6 class="text-xs font-bold text-[#7a8ba8] uppercase tracking-wider mb-2">Itens Inspecionados</h6>
+                <div id="modal-chk-geral-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <!-- Itens avaliados injetados via JS -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t border-white/10 bg-[#0a0e17] flex justify-end">
+            <button onclick="document.getElementById('modal-checklist-geral-detalhes').classList.add('hidden')" class="btn-filter btn-filter-secondary text-xs">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
