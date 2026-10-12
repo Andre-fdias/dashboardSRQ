@@ -100,6 +100,10 @@ O sistema opera de forma **100% estática (Serverless)**, consumindo dados em te
 4. **Metadados e Badges na Frota:**
    - Separação definitiva entre metadados administrativos (*Dia da Prontidão*, *Equipe*) e itens técnicos de inspeção.
    - Badges coloridos das equipes de serviço em conformidade com as cores oficiais das prontidões do Corpo de Bombeiros.
+5. **Regras Inteligentes de Conformidade no Checklist:**
+   - Para perguntas de rotina periódica como *"É dia de CHECK UP LONGO da viatura?"* e *"É dia de realizar engraxamento de caminhão?"*, o valor padrão esperado é **NÃO**.
+   - Respostas **NÃO** são validadas como conformes (badge verde), sem gerar alertas ou avarias falsas.
+   - O item só é destacado em **vermelho** caso a resposta informada seja **SIM**, sinalizando a necessidade do procedimento.
 
 ---
 
