@@ -20,10 +20,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Iniciar Mapa (São Roque como centro padrão)
     map = L.map('map').setView([-23.528, -47.135], 11);
     
-    // Usar camada escura por padrão para combinar com o design
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CartoDB'
-    }).addTo(map);
+    // Usar camada escura por padrão para combinar com o design (ESRI Dark Gray)
+    const base = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; ESRI &copy; OpenStreetMap',
+        maxZoom: 19
+    });
+    const ref = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '',
+        maxZoom: 19
+    });
+    L.layerGroup([base, ref]).addTo(map);
 
     markerCluster = L.markerClusterGroup();
     map.addLayer(markerCluster);

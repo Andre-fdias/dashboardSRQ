@@ -374,13 +374,22 @@ function initHomeMap() {
     
     homeMap = L.map('home-map', { zoomControl: false }).setView([-23.528, -47.135], 11);
     
-    const tileUrl = isLight 
-        ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-
-    L.tileLayer(tileUrl, {
-        attribution: '&copy; OpenStreetMap'
-    }).addTo(homeMap);
+    if (isLight) {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 19
+        }).addTo(homeMap);
+    } else {
+        const base = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; ESRI &copy; OpenStreetMap',
+            maxZoom: 19
+        });
+        const ref = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '',
+            maxZoom: 19
+        });
+        L.layerGroup([base, ref]).addTo(homeMap);
+    }
 }
 
 function updateDashboard() {
@@ -1237,9 +1246,20 @@ function initFullMap() {
 function setMapTileLayer(style) {
     if (activeTileLayer && fullMap) fullMap.removeLayer(activeTileLayer);
     
-    const url = style === 'dark' 
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    if (style === 'dark') {
+        const base = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; ESRI &copy; OpenStreetMap',
+            maxZoom: 19
+        });
+        const ref = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '',
+            maxZoom: 19
+        });
+        activeTileLayer = L.layerGroup([base, ref]).addTo(fullMap);
+        return;
+    }
+    
+    const url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
     
     activeTileLayer = L.tileLayer(url, { attribution: 'ÃÂ© OpenStreetMap | ÃÂ© ESRI' }).addTo(fullMap);
 }
