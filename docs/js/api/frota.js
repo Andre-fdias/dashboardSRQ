@@ -407,8 +407,20 @@ function processFrotaData(cadastros, checklists, abastecimentos, revisoes) {
                 const val = String(row[key] || '').trim();
                 if (val) {
                     const norm = val.toUpperCase();
-                    // Considera OK apenas respostas explicitamente conformes
-                    const isOk = (norm === 'OK' || norm === 'CONFORME' || norm === 'C/N' || norm === 'C' || norm === 'NORMAL');
+                    // Perguntas cujo default/esperado é 'NÃO' (ex: check up longo e engraxamento)
+                    const normalizedKey = keyClean.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const isDefaultNao = /check[\s_-]*up[\s_-]*longo|engraxamento/i.test(normalizedKey);
+                    
+                    let isOk = false;
+                    if (isDefaultNao) {
+                        // Para estas perguntas, default é NÃO. Somente fica vermelho (avaria/alerta) se for SIM
+                        const isSim = (norm === 'SIM' || norm === 'S' || norm === 'TRUE' || norm === '1');
+                        isOk = !isSim;
+                    } else {
+                        // Perguntas normais: considera OK apenas respostas explicitamente conformes
+                        isOk = (norm === 'OK' || norm === 'CONFORME' || norm === 'C/N' || norm === 'C' || norm === 'NORMAL');
+                    }
+
                     if (!isOk) temAvaria = true;
                     itensInspecao.push({ item: keyClean, valor: val, ok: isOk });
                 }

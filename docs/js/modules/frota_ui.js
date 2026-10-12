@@ -641,7 +641,18 @@
             if (chk.itensInspecao && chk.itensInspecao.length > 0) {
                 chk.itensInspecao.forEach(item => {
                     const normVal = String(item.valor || '').trim().toUpperCase();
-                    const isOk = item.ok && (normVal === 'OK' || normVal === 'CONFORME' || normVal === 'C/N' || normVal === 'C' || normVal === 'NORMAL');
+                    const normalizedKey = String(item.item || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const isDefaultNao = /check[\s_-]*up[\s_-]*longo|engraxamento/i.test(normalizedKey);
+                    
+                    let isOk = false;
+                    if (isDefaultNao) {
+                        // Default é NÃO. Somente fica vermelho se for SIM.
+                        const isSim = (normVal === 'SIM' || normVal === 'S' || normVal === 'TRUE' || normVal === '1');
+                        isOk = !isSim;
+                    } else {
+                        isOk = item.ok && (normVal === 'OK' || normVal === 'CONFORME' || normVal === 'C/N' || normVal === 'C' || normVal === 'NORMAL');
+                    }
+
                     const el = document.createElement('div');
                     el.className = `p-2.5 rounded-xl border flex justify-between items-center transition-all ${isOk ? 'bg-emerald-500/5 border-emerald-500/20 text-gray-200' : 'bg-red-500/15 border-red-500/40 text-red-200 font-bold shadow-[0_0_15px_rgba(239,68,68,0.15)]'}`;
                     el.innerHTML = `
