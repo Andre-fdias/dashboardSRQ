@@ -90,6 +90,9 @@ let geocodingAbortController = null;
 let globalValidPoints = []; // Coordenadas em tela para análise do Turf
 let timeSliderControl = null;
 let allMapMarkers = []; // { marker, cat, hour }
+let globalTotalMapPoints = 0;
+let globalMappedPoints = 0;
+let globalMissingItems = [];
 
 window.addEventListener('dataUpdated', () => {
     populateSelects(); // Atualiza o select de viaturas (filtro global)
@@ -1545,5 +1548,788 @@ window.initAbastecimentoTab = function() {
 window.updateAbastecimentoTab = function() {
     if (window.frotaUI && window.frotaUI.updateAbastecimentoTab) {
         window.frotaUI.updateAbastecimentoTab();
+    }
+};
+
+
+// ============================================
+let prontidoesDataTable = null;
+
+function initProntidoesTab() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+    if (charts.efetivoCmt) { charts.efetivoCmt.dispose(); charts.efetivoCmt = null; }
+    if (charts.efetivoNatPrt) { charts.efetivoNatPrt.dispose(); charts.efetivoNatPrt = null; }
+
+    const domCmt = document.getElementById('chart-efetivo-cmt');
+    if (domCmt) charts.efetivoCmt = echarts.init(domCmt, isDark ? 'dark' : null);
+    
+    const domNatPrt = document.getElementById('chart-efetivo-nat-prt');
+    if (domNatPrt) charts.efetivoNatPrt = echarts.init(domNatPrt, isDark ? 'dark' : null);
+
+    window.addEventListener('resize', () => {
+        if (charts.efetivoCmt) charts.efetivoCmt.resize();
+        if (charts.efetivoNatPrt) charts.efetivoNatPrt.resize();
+    });
+
+    if (prontidoesDataTable) {
+        prontidoesDataTable.destroy();
+    }
+    
+    if (window.$ && $.fn.DataTable) {
+        prontidoesDataTable = $('#table-efetivo-cmt').DataTable({
+            data: [],
+            columns: [
+                { data: 'comandante', className: 'font-bold text-white' },
+                { data: 'prontidao', className: 'text-center font-bold' },
+                { data: 'atendidas', className: 'text-center text-green-400 font-bold' },
+                { data: 'qta', className: 'text-center text-red-400 font-bold' },
+                { data: 'topNat', className: 'text-left text-[#b0c0d8] truncate max-w-[150px]' },
+                { data: 'topVtr', className: 'text-center text-blue-400' }
+            ],
+            language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json' },
+            dom: '<"flex flex-col md:flex-row justify-between items-center mb-4 gap-4 w-full"<"text-sm"l><"text-sm"f>>rt<"flex flex-col md:flex-row justify-between items-center mt-4 text-xs text-[#5a6f8a] w-full"i p>',
+            pageLength: 10,
+            lengthMenu: [[10, 15, 25, -1], [10, 15, 25, "Todos"]],
+            order: [[2, 'desc']], // Ordena por Atendimentos Efetivos desc
+            createdRow: function(row, data) {
+                $(row).addClass('border-b border-white/5 hover:bg-white/5 transition text-xs');
+                let colorClass = 'text-gray-400';
+                if (data.prontidao === 'VERDE') colorClass = 'text-green-500';
+                else if (data.prontidao === 'AMARELA') colorClass = 'text-yellow-500';
+                else if (data.prontidao === 'AZUL') colorClass = 'text-blue-500';
+                else if (data.prontidao === 'VERMELHA') colorClass = 'text-red-500';
+                $('td:eq(1)', row).addClass(colorClass);
+            }
+        });
+    }
+
+    updateProntidoesTab();
+}
+
+function updateProntidoesTab() {
+    const data = state.filteredData;
+    const colorsMap = { 'VERDE': '#22c55e', 'AMARELA': '#eab308', 'AZUL': '#3b82f6', 'VERMELHA': '#ef4444' };
+    
+    const mapCmt = {};
+    const mapPrt = {};
+    const natMap = {}; 
+    
+    data.forEach(item => {
+        let p = item.prontidao || 'N/I';
+        if (p === 'TODOS' || p === 'N/I' || p === '') return;
+        
+        // Agrupamento Prontidão (para os KPIs e Chart)
+        if (!mapPrt[p]) mapPrt[p] = 0;
+        mapPrt[p]++;
+
+        // Agrupamento Naturezas x Prontidão
+        const nat = item.natureza || 'OUTRAS';
+        if (!natMap[nat]) natMap[nat] = {};
+        natMap[nat][p] = (natMap[nat][p] || 0) + 1;
+
+        // Agrupamento Comandante
+        let cmt = item.cmtVtr || 'NÃO INFORMADO';
+        if (cmt.trim() === '') cmt = 'NÃO INFORMADO';
+        
+        if (!mapCmt[cmt]) {
+            mapCmt[cmt] = {
+                comandante: cmt,
+                prontidao: p, // Assumindo que ele está nessa prontidão (pode variar, mas pegamos a última ou a principal)
+                prtFreq: {},
+                atendidas: 0,
+                qta: 0,
+                naturezas: {},
+                viaturas: {}
+            };
+        }
+        
+        mapCmt[cmt].prtFreq[p] = (mapCmt[cmt].prtFreq[p] || 0) + 1;
+
+        if (item.resultado === 'QTA') mapCmt[cmt].qta++;
+        else mapCmt[cmt].atendidas++;
+
+        mapCmt[cmt].naturezas[nat] = (mapCmt[cmt].naturezas[nat] || 0) + 1;
+        const v = item.viatura || 'N/I';
+        mapCmt[cmt].viaturas[v] = (mapCmt[cmt].viaturas[v] || 0) + 1;
+    });
+
+    let cmtList = Object.values(mapCmt);
+    
+    // Calcula Top Nat, Top Vtr e ajusta Prontidão principal para cada CMT
+    cmtList.forEach(c => {
+        // Natureza
+        let maxNat = 0; let topN = '--';
+        for (const [n, count] of Object.entries(c.naturezas)) {
+            if (count > maxNat) { maxNat = count; topN = n; }
+        }
+        c.topNat = topN;
+
+        // Viatura
+        let maxVtr = 0; let topV = '--';
+        for (const [v, count] of Object.entries(c.viaturas)) {
+            if (count > maxVtr) { maxVtr = count; topV = v; }
+        }
+        c.topVtr = topV;
+
+        // Prontidao (a mais frequente para esse cmt no periodo)
+        let maxPrt = 0; let topP = c.prontidao;
+        for (const [prt, count] of Object.entries(c.prtFreq)) {
+            if (count > maxPrt) { maxPrt = count; topP = prt; }
+        }
+        c.prontidao = topP;
+        c.total = c.atendidas + c.qta;
+    });
+
+    cmtList = cmtList.filter(c => c.comandante !== 'NÃO INFORMADO');
+    cmtList.sort((a, b) => b.atendidas - a.atendidas); // Sort by efetivas
+
+    // KPIs
+    let topCmt = cmtList.length > 0 ? cmtList[0].comandante : '--';
+    
+    let topPrtName = '--';
+    let maxPrtCalls = -1;
+    for (const [p, count] of Object.entries(mapPrt)) {
+        if (count > maxPrtCalls) { maxPrtCalls = count; topPrtName = p; }
+    }
+
+    let topGlobalNat = '--';
+    let maxNatCalls = -1;
+    for (const [n, prtObj] of Object.entries(natMap)) {
+        const sum = Object.values(prtObj).reduce((acc, v) => acc + v, 0);
+        if (sum > maxNatCalls) { maxNatCalls = sum; topGlobalNat = n; }
+    }
+
+    const setKpiText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+    setKpiText('kpi-efetivo-top-cmt', topCmt);
+    setKpiText('kpi-efetivo-top-nat', topGlobalNat);
+    
+    const prtEl = document.getElementById('kpi-efetivo-top-prt');
+    if (prtEl) {
+        prtEl.textContent = topPrtName;
+        prtEl.className = 'text-sm md:text-base font-bold mt-1 leading-tight';
+        if (topPrtName === 'VERDE') prtEl.classList.add('text-green-400');
+        else if (topPrtName === 'AMARELA') prtEl.classList.add('text-yellow-400');
+        else if (topPrtName === 'AZUL') prtEl.classList.add('text-blue-400');
+        else if (topPrtName === 'VERMELHA') prtEl.classList.add('text-red-400');
+        else prtEl.classList.add('text-white');
+    }
+
+    // Tabela
+    if (prontidoesDataTable) {
+        prontidoesDataTable.clear();
+        prontidoesDataTable.rows.add(cmtList);
+        prontidoesDataTable.draw();
+    }
+
+    // Chart: Top Comandantes
+    if (charts.efetivoCmt) {
+        const top10 = cmtList.slice(0, 10).reverse();
+        charts.efetivoCmt.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { left: '3%', right: '12%', bottom: '5%', top: '5%', containLabel: true },
+            xAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#5a6f8a' } },
+            yAxis: { type: 'category', data: top10.map(c => c.comandante), axisLabel: { color: '#b0c0d8', fontWeight: 'bold', width: 150, overflow: 'truncate' } },
+            series: [{
+                name: 'Atendimentos',
+                type: 'bar',
+                barMaxWidth: 20,
+                data: top10.map(c => ({
+                    value: c.atendidas,
+                    itemStyle: { color: colorsMap[c.prontidao] || '#3b82f6' }
+                })),
+                label: { show: true, position: 'right', color: '#e8edf5', fontWeight: 'bold' },
+                itemStyle: { borderRadius: [0, 4, 4, 0] }
+            }]
+        });
+    }
+
+    // Chart: Natureza x Prontidão
+    if (charts.efetivoNatPrt) {
+        const sortedNats = Object.keys(natMap).sort((a, b) => {
+            const sumA = Object.values(natMap[a]).reduce((acc, val) => acc + val, 0);
+            const sumB = Object.values(natMap[b]).reduce((acc, val) => acc + val, 0);
+            return sumB - sumA;
+        }).slice(0, 7).reverse();
+
+        const prtNames = Object.keys(mapPrt);
+        const seriesData = prtNames.map(p => {
+            return {
+                name: p,
+                type: 'bar',
+                stack: 'total',
+                barMaxWidth: 25,
+                label: { show: true, formatter: (prm) => prm.value > 0 ? prm.value : '' },
+                itemStyle: { color: colorsMap[p] || '#94a3b8', borderRadius: [0,0,0,0] },
+                data: sortedNats.map(nat => natMap[nat][p] || 0)
+            };
+        });
+
+        if (seriesData.length > 0) {
+            seriesData[seriesData.length - 1].itemStyle.borderRadius = [0, 4, 4, 0];
+            seriesData[0].itemStyle.borderRadius = [4, 0, 0, 4];
+        }
+
+        charts.efetivoNatPrt.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            legend: { data: prtNames, bottom: 0, textStyle: { color: '#7a8ba8' } },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '5%', containLabel: true },
+            xAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+            yAxis: { type: 'category', data: sortedNats, axisLabel: { color: '#b0c0d8', width: 220, overflow: 'truncate' } },
+            series: seriesData
+        });
+    }
+}
+
+// ============================================
+// LÓGICA DA ABA TIMELINE
+// ============================================
+
+function initTimelineTab() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    
+    if (charts.timelineHeatmap) {
+        charts.timelineHeatmap.dispose();
+        charts.timelineHeatmap = null;
+    }
+
+    const domHeatmap = document.getElementById('chart-timeline-heatmap');
+    if (domHeatmap) {
+        charts.timelineHeatmap = echarts.init(domHeatmap, isDark ? 'dark' : null);
+    }
+
+    updateTimelineTab();
+}
+
+function updateTimelineTab() {
+    if (!state.filteredData || state.filteredData.length === 0) return;
+
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const textColor = isDark ? '#e5e7eb' : '#1e293b';
+
+    // 1. DADOS DO HEATMAP (Dias x Horas)
+    const hours = Array.from({length: 24}, (_, i) => i + 'h');
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    
+    // Matriz de dados [hourIndex, dayIndex, count]
+    const heatmapDataMap = new Map();
+
+    // 2. DADOS DO FEED (Cronológico)
+    const feedItems = [];
+
+    state.filteredData.forEach(item => {
+        if (!item.data) return;
+        
+        try {
+            // Heatmap
+            const dayIdx = item.data.getDay(); // 0-6
+            
+            let hourIdx = 0;
+            let minIdx = 0;
+            
+            if (item.qtrSaida) {
+                const qtrStr = String(item.qtrSaida);
+                if (qtrStr.includes(':')) {
+                    const parts = qtrStr.split(':');
+                    // Pode ter vindo como string de data: "Sat Dec 30 1899 08:15:00"
+                    let p0 = parts[0].trim();
+                    if (p0.length > 2) p0 = p0.slice(-2); 
+                    hourIdx = parseInt(p0, 10);
+                    minIdx = parseInt(parts[1], 10);
+                } else {
+                    hourIdx = parseInt(qtrStr, 10);
+                }
+            }
+            
+            if (isNaN(hourIdx) || hourIdx < 0 || hourIdx > 23) {
+                hourIdx = 0;
+                minIdx = 0;
+            }
+
+            const key = `${hourIdx}-${dayIdx}`;
+            heatmapDataMap.set(key, (heatmapDataMap.get(key) || 0) + 1);
+
+            // Feed
+            const itemDate = new Date(item.data.getTime());
+            itemDate.setHours(hourIdx, isNaN(minIdx) ? 0 : minIdx, 0, 0);
+
+            feedItems.push({
+                dateObj: itemDate,
+                hora: `${hourIdx.toString().padStart(2, '0')}:${(isNaN(minIdx) ? 0 : minIdx).toString().padStart(2, '0')}`,
+                natureza: item.natureza || 'N/I',
+                viatura: item.viatura || 'N/I',
+                prontidao: item.prontidao || 'N/I',
+                cmt: item.cmtVtr || 'N/I',
+                endereco: item.endereco || '',
+                cidade: item.cidade || '',
+                tempo: item.tempoMinutos || 0,
+                status: (item.qtrLocal || item.qta) ? 'Atendida' : 'N/I'
+            });
+
+        } catch (e) { }
+    });
+
+    // --- Render Heatmap ---
+    if (charts.timelineHeatmap) {
+        const heatmapSeriesData = [];
+        let maxVal = 0;
+        for (let d = 0; d < 7; d++) {
+            for (let h = 0; h < 24; h++) {
+                const val = heatmapDataMap.get(`${h}-${d}`) || 0;
+                heatmapSeriesData.push([h, d, val]);
+                if (val > maxVal) maxVal = val;
+            }
+        }
+
+        charts.timelineHeatmap.setOption({
+            backgroundColor: 'transparent',
+            tooltip: {
+                position: 'top',
+                formatter: function (p) {
+                    return `${days[p.data[1]]} às ${hours[p.data[0]]}: ${p.data[2]} ocorrências`;
+                }
+            },
+            grid: { top: 10, bottom: 25, left: 35, right: 10 },
+            xAxis: {
+                type: 'category',
+                data: hours,
+                splitArea: { show: true },
+                axisLabel: { color: textColor, fontSize: 10 }
+            },
+            yAxis: {
+                type: 'category',
+                data: days,
+                splitArea: { show: true },
+                axisLabel: { color: textColor, fontSize: 10 }
+            },
+            visualMap: {
+                min: 0,
+                max: maxVal || 10,
+                calculable: true,
+                orient: 'horizontal',
+                left: 'center',
+                bottom: -20,
+                show: false,
+                inRange: {
+                    color: isDark 
+                        ? ['#0a0e17', '#1e3a8a', '#2563eb', '#9333ea', '#ec4899', '#ef4444'] 
+                        : ['#f8fafc', '#bfdbfe', '#60a5fa', '#a855f7', '#ec4899', '#ef4444']
+                }
+            },
+            series: [{
+                name: 'Ocorrências',
+                type: 'heatmap',
+                data: heatmapSeriesData,
+                label: { show: false },
+                emphasis: {
+                    itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+                }
+            }]
+        });
+    }
+
+    // --- Render Feed ---
+    const feedContainer = document.getElementById('timeline-feed');
+    if (feedContainer) {
+        // Ordena mais recentes primeiro
+        feedItems.sort((a, b) => b.dateObj - a.dateObj);
+        
+        // Limita a 100 itens para não pesar
+        const renderItems = feedItems.slice(0, 100);
+        
+        if (renderItems.length === 0) {
+            feedContainer.innerHTML = `<div class="text-center text-sm text-gray-500 mt-10">Nenhuma ocorrência encontrada.</div>`;
+            return;
+        }
+
+        let html = '';
+        renderItems.forEach((item, index) => {
+            // Cor da prontidao
+            let prtColor = 'bg-gray-500';
+            if(item.prontidao.toUpperCase().includes('AZUL')) prtColor = 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]';
+            if(item.prontidao.toUpperCase().includes('VERDE')) prtColor = 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
+            if(item.prontidao.toUpperCase().includes('AMARELA')) prtColor = 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]';
+            if(item.prontidao.toUpperCase().includes('VERMELHA')) prtColor = 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
+
+            const dataStr = item.dateObj.toLocaleDateString('pt-BR');
+
+            html += `
+                <div class="flex items-start gap-4 relative z-10 mb-4 transition-all hover:translate-x-1">
+                    <!-- Bola / Icone -->
+                    <div class="w-12 h-12 rounded-2xl ${prtColor} flex items-center justify-center text-white flex-shrink-0 relative z-10 border border-white/20 mt-1">
+                        <i class="fa-solid fa-fire-extinguisher text-lg"></i>
+                    </div>
+                    
+                    <!-- Card de conteúdo -->
+                    <div class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition group">
+                        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-2">
+                            <h3 class="text-sm font-bold text-white group-hover:text-blue-400 transition">${item.natureza}</h3>
+                            <div class="text-[10px] font-bold text-[#5a6f8a] bg-[#0a0e17] px-2 py-1 rounded-lg border border-white/5 self-start md:self-auto">
+                                ${dataStr} às <span class="text-white">${item.hora}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-xs text-[#b0c0d8] leading-relaxed mb-3">
+                            ${item.endereco ? item.endereco + ' - ' : ''}${item.cidade}
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2 text-[10px] font-semibold text-gray-400">
+                            <span class="bg-[#0a0e17]/50 px-2 py-1 rounded-md border border-white/5"><i class="fa-solid fa-truck-fire mr-1 text-gray-500"></i> ${item.viatura}</span>
+                            <span class="bg-[#0a0e17]/50 px-2 py-1 rounded-md border border-white/5"><i class="fa-solid fa-user mr-1 text-gray-500"></i> ${item.cmt}</span>
+                            <span class="bg-[#0a0e17]/50 px-2 py-1 rounded-md border border-white/5"><i class="fa-regular fa-clock mr-1 text-gray-500"></i> ${item.tempo} min</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        feedContainer.innerHTML = html;
+    }
+}
+
+// ============================================
+// LÓGICA DA ABA DEJEM
+
+
+// Processamento assíncrono de Geocoding (Não bloqueia a tela)
+async function processGeocodingBackground(itemsToGeocode, geocache, heatPoints, mapMarkerCluster, signal) {
+    const uiStatus = document.getElementById('geocoding-status');
+    const uiCount = document.getElementById('geocoding-count');
+    const uiProgress = document.getElementById('geocoding-progress');
+    
+    if (uiStatus) uiStatus.classList.remove('hidden');
+
+    let processed = 0;
+    const total = itemsToGeocode.length;
+    let cacheUpdated = false;
+
+    for (const { item, query } of itemsToGeocode) {
+        if (signal && signal.aborted) return;
+        
+        try {
+            await new Promise(r => setTimeout(r, 1000)); // 1 req/s nominatim limit
+            if (signal && signal.aborted) return;
+
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, { signal });
+            const resData = await response.json();
+            
+            if (resData && resData.length > 0) {
+                const coords = [parseFloat(resData[0].lat), parseFloat(resData[0].lon)];
+                geocache[query] = coords;
+                cacheUpdated = true;
+                
+                heatPoints.push(coords);
+                globalMappedPoints++;
+                
+                globalMissingItems = globalMissingItems.filter(m => m.item !== item);
+                
+                updateMapStatsUI();
+                
+                // Add popup
+                const dateStr = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '';
+                const popup = `
+                    <div style="color: #0a0e17; min-width: 200px; font-family: sans-serif;">
+                        <strong style="color: #2563eb; display:block; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 4px;">${item.natureza || 'N/I'}</strong>
+                        <div style="font-size: 12px; line-height: 1.4;">
+                            <b>Talão:</b> ${item.talao}<br>
+                            <b>Viatura:</b> ${item.viatura} (${item.prontidao})<br>
+                            <b>Data:</b> ${dateStr}<br>
+                            <b>Tempo Resp:</b> ${item.tempoMinutos ? item.tempoMinutos + ' min' : 'N/I'}<br>
+                            ${item.endereco ? '<b>Local:</b> ' + item.endereco + '<br>' : ''}
+                            <b>Cidade:</b> ${item.cidade}
+                        </div>
+                    </div>`;
+                const marker = L.marker(coords).bindPopup(popup);
+                
+                // Adiciona ao cluster correspondente
+                let cat = 'outros';
+                if (item.natureza) {
+                    const nat = item.natureza.toLowerCase();
+                    if (nat.includes('incêndio') || nat.includes('fogo')) cat = 'incendio';
+                    else if (nat.includes('resgate') || nat.includes('acidente') || nat.includes('salvamento') || nat.includes('atropelamento') || nat.includes('queda')) cat = 'resgate';
+                }
+
+                if (cat === 'incendio' && clusterIncendios) clusterIncendios.addLayer(marker);
+                else if (cat === 'resgate' && clusterResgates) clusterResgates.addLayer(marker);
+                else if (clusterOutros) clusterOutros.addLayer(marker);
+
+                let hour = 24;
+                if (item.horaSaida) {
+                    const parsed = parseInt(item.horaSaida);
+                    if (!isNaN(parsed)) hour = parsed;
+                }
+                allMapMarkers.push({ marker, cat, hour });
+                
+                // Update Heatmap if active
+                if (fullHeatLayer) {
+                    fullHeatLayer.setLatLngs(heatPoints);
+                }
+            } else {
+                const missing = globalMissingItems.find(m => m.item === item);
+                if (missing) missing.status = '❌ Não Encontrado (Sem Rua/Nº)';
+                updateMapStatsUI();
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') console.warn("Geocoding background err:", err);
+            const missing = globalMissingItems.find(m => m.item === item);
+            if (missing) missing.status = '❌ Erro de Conexão';
+            updateMapStatsUI();
+        }
+
+        processed++;
+        if (uiCount) uiCount.textContent = `${processed}/${total}`;
+        if (uiProgress) uiProgress.style.width = `${(processed / total) * 100}%`;
+    }
+
+    if (cacheUpdated) localStorage.setItem('dashboard_geocache', JSON.stringify(geocache));
+    if (uiStatus) uiStatus.classList.add('hidden');
+}
+
+// globalTotalMapPoints declared at top
+// globalMappedPoints declared at top
+// globalMissingItems declared at top
+
+function updateMapStatsUI() {
+    const domStats = document.getElementById('map-render-stats');
+    const domPct = document.getElementById('map-render-pct');
+    const domMissing = document.getElementById('map-render-missing');
+    
+    if (domStats && domPct && domMissing && globalTotalMapPoints > 0) {
+        domStats.classList.remove('hidden');
+        const pct = Math.round((globalMappedPoints / globalTotalMapPoints) * 100);
+        const missing = globalTotalMapPoints - globalMappedPoints;
+        
+        domPct.textContent = `${pct}%`;
+        domPct.className = `font-bold text-sm leading-none ${pct >= 90 ? 'text-green-400' : (pct >= 70 ? 'text-yellow-400' : 'text-red-400')}`;
+        domMissing.textContent = missing;
+    }
+}
+
+window.showMissingGeocodes = function() {
+    if (globalMissingItems.length === 0) {
+        alert("Todos os endereços foram renderizados com sucesso no mapa!");
+        return;
+    }
+    
+    const existing = document.getElementById('modal-missing-geo');
+    if (existing) existing.remove();
+    
+    let html = `
+        <div class="fixed inset-0 z-[9999] bg-[#0a0e17]/80 backdrop-blur-sm flex items-center justify-center p-4" id="modal-missing-geo">
+            <div class="bg-[#0a0e17] border border-white/10 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl relative">
+                <button onclick="document.getElementById('modal-missing-geo').remove()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+                
+                <h2 class="text-lg font-bold text-red-400 mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Relatório de Falhas de Localização (${globalMissingItems.length})</h2>
+                <p class="text-xs text-gray-400 mb-4">Estes endereços não puderam ser plotados no mapa. Eles requerem correção de grafia ou inclusão manual de coordenadas na planilha.</p>
+                
+                <div class="overflow-y-auto flex-1 rounded-xl border border-white/5 bg-white/5 p-0">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-[#0a0e17] text-gray-400 sticky top-0 border-b border-white/10 shadow-md">
+                            <tr>
+                                <th class="p-3 font-semibold">Talão</th>
+                                <th class="p-3 font-semibold">Natureza</th>
+                                <th class="p-3 font-semibold">Endereço (Buscado)</th>
+                                <th class="p-3 font-semibold w-32">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${globalMissingItems.map(m => `
+                                <tr class="border-b border-white/5 hover:bg-white/10 transition">
+                                    <td class="p-3 text-[#5a6f8a] font-mono font-bold">${m.item.talao || 'N/I'}</td>
+                                    <td class="p-3 text-gray-300">${m.item.natureza || 'N/I'}</td>
+                                    <td class="p-3 text-gray-400 truncate max-w-[200px]" title="${m.query}">${m.query}</td>
+                                    <td class="p-3 ${m.status.includes('❌') ? 'text-red-400' : 'text-yellow-400'} font-bold">${m.status}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', html);
+};
+
+// ==========================================
+// QTA TAB (Ocorrências Canceladas)
+// ==========================================
+
+let qtaDataTable = null;
+let chartQtaNat = null;
+let chartQtaCidade = null;
+
+function initQtaTab() {
+    if (!document.getElementById('kpi-qta-total')) return;
+
+    if (chartQtaNat) {
+        chartQtaNat.dispose();
+        chartQtaNat = null;
+    }
+    if (chartQtaCidade) {
+        chartQtaCidade.dispose();
+        chartQtaCidade = null;
+    }
+
+    const chartDomNat = document.getElementById('chart-qta-nat');
+    if (chartDomNat) {
+        chartQtaNat = echarts.init(chartDomNat);
+    }
+    const chartDomCidade = document.getElementById('chart-qta-cidade');
+    if (chartDomCidade) {
+        chartQtaCidade = echarts.init(chartDomCidade);
+    }
+
+    if (!qtaDataTable && document.getElementById('table-qta-detalhe')) {
+        qtaDataTable = $('#table-qta-detalhe').DataTable({
+            data: [],
+            columns: [
+                { data: 'talao' },
+                { data: 'dataHora', render: function(data, type, row) {
+                    if (type === 'sort' || type === 'type') {
+                        return row._dataTimestamp;
+                    }
+                    return data;
+                }},
+                { data: 'viatura' },
+                { data: 'natureza' },
+                { data: 'motivo' }
+            ],
+            language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
+            pageLength: 10,
+            order: [[1, 'desc']], // Sort by date desc
+            dom: '<"flex justify-between items-center mb-4"f>t<"flex justify-between items-center mt-4"p>',
+            createdRow: function (row, data, dataIndex) {
+                $(row).addClass('border-b border-white/5 hover:bg-white/5 transition text-sm text-gray-300');
+                $('td', row).addClass('p-3');
+                $('td', row).eq(0).addClass('font-mono font-bold text-[#5a6f8a]');
+                $('td', row).eq(4).addClass('text-red-400/80');
+            }
+        });
+    }
+
+    updateQtaTab();
+};
+
+function updateQtaTab() {
+    if (!document.getElementById('kpi-qta-total')) return;
+
+    const qtaData = state.filteredData.filter(d => d.resultado === 'QTA');
+
+    document.getElementById('kpi-qta-total').textContent = qtaData.length;
+
+    const vtrCounts = {};
+    const natCounts = {};
+    const cidadeCounts = {};
+
+    qtaData.forEach(d => {
+        if (d.viatura) {
+            vtrCounts[d.viatura] = (vtrCounts[d.viatura] || 0) + 1;
+        }
+        if (d.natureza) {
+            natCounts[d.natureza] = (natCounts[d.natureza] || 0) + 1;
+        }
+        if (d.cidade) {
+            cidadeCounts[d.cidade] = (cidadeCounts[d.cidade] || 0) + 1;
+        }
+    });
+
+    let topVtr = '--';
+    let maxVtr = 0;
+    for (const [vtr, count] of Object.entries(vtrCounts)) {
+        if (count > maxVtr) { maxVtr = count; topVtr = vtr; }
+    }
+    document.getElementById('kpi-qta-vtr').textContent = topVtr !== '--' ? `${topVtr} (${maxVtr})` : '--';
+
+    let topNat = '--';
+    let maxNat = 0;
+    for (const [nat, count] of Object.entries(natCounts)) {
+        if (count > maxNat) { maxNat = count; topNat = nat; }
+    }
+    document.getElementById('kpi-qta-nat').textContent = topNat !== '--' ? `${topNat} (${maxNat})` : '--';
+
+    const chartData = Object.entries(natCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+    if (chartQtaNat && chartData.length > 0) {
+        chartQtaNat.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
+            legend: { show: false },
+            grid: { left: '3%', right: '25%', bottom: '3%', top: '3%', containLabel: true },
+            xAxis: { type: 'value', show: false },
+            yAxis: { 
+                type: 'category', 
+                data: chartData.map(d => d.name).reverse(),
+                axisLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { color: '#b0c0d8', width: 120, overflow: 'truncate' }
+            },
+            series: [{
+                name: 'Natureza',
+                type: 'bar',
+                data: chartData.map(d => d.value).reverse(),
+                label: { show: true, position: 'right', color: '#fff' },
+                itemStyle: { borderRadius: [0, 4, 4, 0], color: '#ef4444' }
+            }]
+        });
+    } else if (chartQtaNat) {
+        chartQtaNat.clear();
+    }
+
+    const chartCidadeData = Object.entries(cidadeCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+    if (chartQtaCidade && chartCidadeData.length > 0) {
+        chartQtaCidade.setOption({
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(10, 14, 23, 0.9)', borderColor: '#ffffff20', textStyle: { color: '#fff' } },
+            legend: { show: false },
+            grid: { left: '3%', right: '25%', bottom: '3%', top: '3%', containLabel: true },
+            xAxis: { type: 'value', show: false },
+            yAxis: { 
+                type: 'category', 
+                data: chartCidadeData.map(d => d.name).reverse(),
+                axisLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { color: '#b0c0d8', width: 100, overflow: 'truncate' }
+            },
+            series: [{
+                name: 'Cidade',
+                type: 'bar',
+                data: chartCidadeData.map(d => d.value).reverse(),
+                label: { show: true, position: 'right', color: '#fff' },
+                itemStyle: { borderRadius: [0, 4, 4, 0], color: '#3b82f6' }
+            }]
+        });
+    } else if (chartQtaCidade) {
+        chartQtaCidade.clear();
+    }
+
+    if (qtaDataTable) {
+        const tableRows = qtaData.map(d => {
+            const dateStr = d.data instanceof Date && !isNaN(d.data) ? d.data.toLocaleDateString('pt-BR') : '';
+            return {
+                talao: d.talao || 'N/I',
+                dataHora: `${dateStr} ${d.qtrSaida || ''}`.trim(),
+                _dataTimestamp: d.data ? d.data.getTime() : 0,
+                viatura: d.viatura || 'N/I',
+                natureza: d.natureza || 'N/I',
+                motivo: d.observacoes || 'N/I'
+            };
+        });
+        
+        qtaDataTable.clear();
+        qtaDataTable.rows.add(tableRows);
+        qtaDataTable.draw();
     }
 };
